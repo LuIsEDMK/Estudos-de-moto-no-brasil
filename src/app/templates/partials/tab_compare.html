@@ -1,0 +1,86 @@
+<!-- ── Tab: Comparador ── -->
+<div x-show="abaAtiva === 'comparador'" class="p-6" x-cloak>
+
+    <!-- Non-VIP gate -->
+    <div x-show="!usuarioVip">
+        <div class="alert alert-danger mb-4">
+            <p class="font-bold">🔒 O Comparador é exclusivo para Membros VIP.</p>
+        </div>
+        <div class="panel p-6">
+            <p class="text-sm mb-4" style="color: rgb(var(--color-content-muted));">
+                Compare duas motos lado a lado e descubra qual protege melhor o seu investimento.
+            </p>
+            <a href="https://www.mercadopago.com.br" target="_blank" rel="noopener"
+                class="btn-cta bg-sky-600 hover:bg-sky-700 text-white">
+                💳 Desbloquear Ferramentas VIP
+            </a>
+        </div>
+    </div>
+
+    <!-- VIP comparator -->
+    <div x-show="usuarioVip" x-cloak>
+        <h2 class="text-xl font-bold mb-1" style="color: rgb(var(--color-content));">⚔️ Duelo de Desvalorização</h2>
+        <p class="text-sm mb-6" style="color: rgb(var(--color-content-muted));">
+            Selecione duas motos para ver qual delas protege melhor o seu dinheiro.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+            <!-- Moto A -->
+            <div class="panel p-4">
+                <h3 class="text-xs font-bold uppercase tracking-wider mb-3" style="color: rgb(var(--color-content-muted));">Moto A —
+                    Referência</h3>
+                <div class="flex flex-col gap-2">
+                    <select x-model="comparar.motoA.marca" @change="carregarModelosComparacao('A')" class="form-control"
+                        aria-label="Marca Moto A">
+                        <option value="">Selecione a marca...</option>
+                        {% for marca in marcas %}
+                        <option value="{{ marca }}">{{ marca }}</option>
+                        {% endfor %}
+                    </select>
+                    <select x-model="comparar.motoA.modelo" class="form-control" aria-label="Modelo Moto A">
+                        <option value="">Selecione o modelo...</option>
+                        <template x-for="modelo in modelosComparacao.A" :key="modelo">
+                            <option :value="modelo" x-text="modelo"></option>
+                        </template>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Moto B -->
+            <div class="panel p-4">
+                <h3 class="text-xs font-bold uppercase tracking-wider mb-3" style="color: rgb(var(--color-content-muted));">Moto B —
+                    Rival</h3>
+                <div class="flex flex-col gap-2">
+                    <select x-model="comparar.motoB.marca" @change="carregarModelosComparacao('B')" class="form-control"
+                        aria-label="Marca Moto B">
+                        <option value="">Selecione a marca...</option>
+                        {% for marca in marcas %}
+                        <option value="{{ marca }}">{{ marca }}</option>
+                        {% endfor %}
+                    </select>
+                    <select x-model="comparar.motoB.modelo" class="form-control" aria-label="Modelo Moto B">
+                        <option value="">Selecione o modelo...</option>
+                        <template x-for="modelo in modelosComparacao.B" :key="modelo">
+                            <option :value="modelo" x-text="modelo"></option>
+                        </template>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <button id="btn-comparar" @click="compararMotos" class="btn-primary sm:w-auto px-10 mb-6">
+            🚀 Iniciar Duelo Financeiro
+        </button>
+
+        <div x-show="comparacaoResultado" x-cloak>
+            <div id="grafico-comparacao" class="w-full h-80 mb-4 rounded-lg overflow-hidden"></div>
+            <div x-show="comparacaoResultado && comparacaoResultado.veredito" class="alert alert-success">
+                🏆 A <strong x-text="comparacaoResultado.veredito.vencedor"></strong> vence o duelo!
+                Ela desvaloriza cerca de
+                <strong x-text="comparacaoResultado.veredito.diferenca.toFixed(1) + '%'"></strong>
+                a menos por ano que a rival.
+            </div>
+        </div>
+    </div>
+
+</div>

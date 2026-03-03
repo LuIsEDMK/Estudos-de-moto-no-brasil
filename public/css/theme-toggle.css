@@ -1,0 +1,27 @@
+/* ========================================
+   THEME TOGGLE BUTTON
+   ======================================== */
+
+#theme-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.5rem;
+    border: none;
+    background: transparent;
+    color: rgb(var(--color-content-muted));
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+#theme-toggle:hover {
+    background: rgb(var(--color-border-subtle));
+    color: rgb(var(--color-content));
+}
+
+#theme-toggle:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(249 115 22);
+}

@@ -1,60 +1,55 @@
 from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-import plotly.io as pio
+import plotly.utils
 import json
 import secrets
-from typing import Optional, List
-import auth_vip
-from sklearn.linear_model import LinearRegression
+from io import StringIO
+from typing import Optional
+
+from . import auth_vip
+from .data_bundle import CSV_DATA
 
 app = FastAPI(title="MotoExpert AI")
 
-# Mount static files and templates
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+# ---------------------------------------------------------------------------
+# Templates — loaded from the bundled package (works in Cloudflare Workers)
+# ---------------------------------------------------------------------------
+# Jinja2's PackageLoader reads templates that are bundled *inside* the Python
+# package (src/app/templates/), so they travel with the Worker deployment.
+from jinja2 import PackageLoader, Environment, select_autoescape
 
+jinja_env = Environment(
+    loader=PackageLoader("app", "templates"),
+    autoescape=select_autoescape(["html"]),
+)
 
-# --- Session State Simulation (In-Memory) ---
-class SessionState:
-    def __init__(self):
-        self.consultas_feitas = 0
-        self.usuario_vip = False
+class _J2Templates:
+    """Thin wrapper so we can call .TemplateResponse() like FastAPI's Jinja2Templates."""
+    def __init__(self, env: Environment):
+        self.env = env
 
+    def TemplateResponse(self, name: str, context: dict):
+        tmpl = self.env.get_template(name)
+        html = tmpl.render(**context)
+        return HTMLResponse(content=html)
 
-sessions = {}
+templates = _J2Templates(jinja_env)
 
-
-def get_or_create_session(request: Request) -> tuple[str, SessionState]:
-    """Get existing session or create new one with unique ID."""
-    session_id = request.cookies.get("session_id")
-    
-    if not session_id or session_id not in sessions:
-        session_id = secrets.token_hex(16)  # Generate unique 32-char hex ID
-    
-    if session_id not in sessions:
-        sessions[session_id] = SessionState()
-    
-    return session_id, sessions[session_id]
-
-
-# --- Data Loading ---
-@pd.api.extensions.register_dataframe_accessor("cache")
-def carregar_dados():
-    df = pd.read_csv("base_motos_VIP_mestre.csv")
+# ---------------------------------------------------------------------------
+# Data — loaded from the bundled CSV inside the package
+# ---------------------------------------------------------------------------
+def _load_bundled_csv() -> pd.DataFrame:
+    """Load CSV from the bundled Python data module."""
+    df = pd.read_csv(StringIO(CSV_DATA))
     df.loc[df['ano_modelo'] == 2026, 'ano_modelo'] = 2025
     return df
 
 
-def load_data():
-    df = pd.read_csv("base_motos_VIP_mestre.csv")
-    df.loc[df['ano_modelo'] == 2026, 'ano_modelo'] = 2025
-    return df
+df_motos = _load_bundled_csv()
 
 
 def gerar_relatorios_vip(df):
@@ -74,29 +69,32 @@ def gerar_relatorios_vip(df):
     return relatorio
 
 
-# Load data at startup
-df_motos = load_data()
 df_relatorios = gerar_relatorios_vip(df_motos)
 
-
-# --- Pydantic Models ---
-class AnalysisRequest(BaseModel):
-    marca: str
-    modelo: str
-
-
-class CompareRequest(BaseModel):
-    marca_a: str
-    modelo_a: str
-    marca_b: str
-    modelo_b: str
+# ---------------------------------------------------------------------------
+# Session State (in-memory, per-isolate)
+# ---------------------------------------------------------------------------
+class SessionState:
+    def __init__(self):
+        self.consultas_feitas = 0
+        self.usuario_vip = False
 
 
-class LoginRequest(BaseModel):
-    senha: str
+sessions: dict[str, SessionState] = {}
 
 
-# --- Helper Functions ---
+def get_or_create_session(request: Request) -> tuple[str, SessionState]:
+    session_id = request.cookies.get("session_id")
+    if not session_id or session_id not in sessions:
+        session_id = secrets.token_hex(16)
+    if session_id not in sessions:
+        sessions[session_id] = SessionState()
+    return session_id, sessions[session_id]
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
 def definir_cor_risco(pct):
     if pct <= -15:
         return '#8B0000'
@@ -115,36 +113,35 @@ def texto_dinamico_hover(valor_reais):
         return f"Perdeu: R$ {abs(valor_reais):,.2f}"
 
 
-import plotly.utils
-
 def plot_to_json(fig):
     return json.dumps(fig.to_plotly_json(), cls=plotly.utils.PlotlyJSONEncoder)
 
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
 
-# --- Routes ---
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     session_id, session = get_or_create_session(request)
-    
+
     lista_marcas = sorted(df_motos['nome_marca'].unique())
     restantes = max(0, 6 - session.consultas_feitas)
-    
+
     response = templates.TemplateResponse("index.html", {
         "request": request,
         "marcas": lista_marcas,
         "usuario_vip": session.usuario_vip,
         "consultas_feitas": session.consultas_feitas,
-        "restantes": restantes
+        "restantes": restantes,
     })
-    response.set_cookie(key="session_id", value=session_id, httponly=True, max_age=86400*7)  # 7 days
+    response.set_cookie(key="session_id", value=session_id, httponly=True, max_age=86400 * 7)
     return response
 
 
 @app.post("/api/login")
 async def login(request: Request, senha: str = Form(...)):
     session_id, session = get_or_create_session(request)
-    
-    # Use your auth_vip module to validate
+
     try:
         valido = auth_vip.validar_senha(senha)
     except Exception as e:
@@ -153,54 +150,50 @@ async def login(request: Request, senha: str = Form(...)):
 
     session.usuario_vip = valido
     response = JSONResponse({"success": valido, "vip": valido})
-    response.set_cookie(key="session_id", value=session_id, httponly=True, max_age=86400*7)
+    response.set_cookie(key="session_id", value=session_id, httponly=True, max_age=86400 * 7)
     return response
 
 
 @app.post("/api/analyze")
 async def analyze(request: Request, marca: str = Form(...), modelo: str = Form(...)):
     session_id, session = get_or_create_session(request)
-    
-    # Check limit
+
     if session.consultas_feitas >= 6 and not session.usuario_vip:
         raise HTTPException(status_code=403, detail="Limite gratuito atingido")
-    
+
     session.consultas_feitas += 1
-    
+
     df_filtrado = df_motos[df_motos['nome_marca'] == marca]
     df_final = df_filtrado[df_filtrado['nome_modelo'] == modelo].copy()
     df_final = df_final.sort_values(by='ano_modelo', ascending=False).reset_index(drop=True)
-    
+
     df_final['perda_reais'] = df_final['preco_limpo'].diff(-1) * -1
     df_final['perda_pct'] = (df_final['perda_reais'] / df_final['preco_limpo'].shift(-1)) * 100
-    
+
     preco_mais_novo = df_final['preco_limpo'].iloc[0]
     preco_mais_velho = df_final['preco_limpo'].iloc[-1]
     desvalorizacao_total_pct = ((preco_mais_novo - preco_mais_velho) / preco_mais_novo) * 100 if len(df_final) > 1 else 0
-    
-    # Build table data
+
     tabela_data = []
     for idx, (_, row) in enumerate(df_final[['ano_modelo', 'preco_limpo']].iterrows()):
         tabela_data.append({
             "ano": int(row['ano_modelo']),
             "valor": f"R$ {row['preco_limpo']:,.2f}" if session.usuario_vip or idx >= 3 else "🔒 Exclusivo VIP"
         })
-    
-    # Build chart data
+
     df_grafico = df_final.dropna(subset=['perda_reais']).copy()
     df_grafico['periodo'] = df_grafico['ano_modelo'].astype(str) + " -> " + (df_grafico['ano_modelo'] - 1).astype(str)
     df_grafico['cor_barra'] = df_grafico['perda_pct'].apply(definir_cor_risco)
     df_grafico['texto_exibicao'] = df_grafico['perda_pct'].apply(lambda x: f"+{x:.1f}%" if x > 0 else f"{x:.1f}%")
     df_grafico['hover_exibicao'] = df_grafico['perda_reais'].apply(texto_dinamico_hover)
-    
-    # Hide recent data for non-VIP
+
     if not session.usuario_vip and len(df_grafico) >= 2:
         media_falsa = df_grafico['perda_reais'].mean()
         df_grafico.loc[0:1, 'perda_reais'] = media_falsa
         df_grafico.loc[0:1, 'cor_barra'] = '#D3D3D3'
         df_grafico.loc[0:1, 'texto_exibicao'] = "🔒 VIP"
         df_grafico.loc[0:1, 'hover_exibicao'] = "🔒 Assine para ver"
-    
+
     fig = go.Figure()
     fig.add_trace(go.Bar(
         x=df_grafico['periodo'].tolist(),
@@ -218,25 +211,23 @@ async def analyze(request: Request, marca: str = Form(...), modelo: str = Form(.
         xaxis={'type': 'category'},
         showlegend=False
     )
-    
+
     chart_json = plot_to_json(fig)
-    
-    # --- Regression Analysis ---
+
+    from sklearn.linear_model import LinearRegression
     X = df_final[['ano_modelo']].values
     y = df_final['preco_limpo'].values
-    
+
     previsao_2026 = "N/A"
     previsibilidade = 0
     tendencia_reais = 0
-    
+
     if len(df_final) >= 3:
         reg_model = LinearRegression()
         reg_model.fit(X, y)
         r2 = reg_model.score(X, y)
         previsibilidade = r2 * 100
         tendencia_reais = reg_model.coef_[0]
-        
-        # Predict for next year (assuming current latest is 2025)
         pred = reg_model.predict([[2026]])[0]
         previsao_2026 = f"R$ {max(0, pred):,.2f}"
 
@@ -255,16 +246,15 @@ async def analyze(request: Request, marca: str = Form(...), modelo: str = Form(.
             "tendencia_anual": f"R$ {tendencia_reais:,.2f}" if session.usuario_vip else "🔒 VIP Only"
         }
     })
-    response.set_cookie(key="session_id", value=session_id, httponly=True, max_age=86400*7)
+    response.set_cookie(key="session_id", value=session_id, httponly=True, max_age=86400 * 7)
     return response
 
 
 @app.get("/api/vip/reports")
 async def get_vip_reports(request: Request):
     session_id, session = get_or_create_session(request)
-    
+
     if not session.usuario_vip:
-        # Return teaser data
         return {
             "vip": False,
             "degustacao": [
@@ -273,26 +263,21 @@ async def get_vip_reports(request: Request):
                 {"ranking": "3º", "marca": "B**", "modelo": "G *** *", "preco": "R$ **.***,**", "perda": "🔒 VIP"}
             ]
         }
-    
-    # Top 10 moedas fortes
+
     motos_recentes = df_relatorios[df_relatorios['ano_modelo_novo'] >= 2024].sort_values(
         by='queda_anual_media').head(10)
-    
-    # Guerreiras baratas
     motos_baratas = df_relatorios[
         (df_relatorios['preco_limpo_novo'] <= 15000) &
         (df_relatorios['ano_modelo_novo'] >= 2018)
     ].sort_values(by='queda_anual_media').head(10)
-    
-    # Muro da vergonha
     motos_bombas = df_relatorios[df_relatorios['ano_modelo_novo'] >= 2022].sort_values(
         by='queda_anual_media', ascending=False).head(10)
-    
+
     return {
         "vip": True,
         "recentes": motos_recentes[['nome_marca', 'nome_modelo', 'ano_modelo_novo', 'preco_limpo_novo', 'queda_anual_media']].to_dict('records'),
         "baratas": motos_baratas[['nome_marca', 'nome_modelo', 'ano_modelo_novo', 'preco_limpo_novo', 'queda_anual_media']].to_dict('records'),
-        "bombas": motos_bombas[['nome_marca', 'nome_modelo', 'ano_modelo_novo', 'preco_limpo_novo', 'queda_anual_media']].to_dict('records')
+        "bombas": motos_bombas[['nome_marca', 'nome_modelo', 'ano_modelo_novo', 'preco_limpo_novo', 'queda_anual_media']].to_dict('records'),
     }
 
 
@@ -305,16 +290,15 @@ async def compare(
     modelo_b: str = Form(...),
 ):
     session_id, session = get_or_create_session(request)
-    
+
     if not session.usuario_vip:
         raise HTTPException(status_code=403, detail="Comparador exclusivo para VIP")
-    
+
     df_a = df_motos[(df_motos['nome_marca'] == marca_a) & (df_motos['nome_modelo'] == modelo_a)].copy()
     df_b = df_motos[(df_motos['nome_marca'] == marca_b) & (df_motos['nome_modelo'] == modelo_b)].copy()
 
     df_a = df_a.sort_values('ano_modelo')
     df_b = df_b.sort_values('ano_modelo')
-
     df_a['Moto'] = modelo_a
     df_b['Moto'] = modelo_b
     df_duel = pd.concat([df_a, df_b])
@@ -323,9 +307,7 @@ async def compare(
                        markers=True,
                        title=f"Evolução de Preço: {modelo_a} vs {modelo_b}",
                        labels={'preco_limpo': 'Preço FIPE (R$)', 'ano_modelo': 'Ano'})
-
     fig_duel.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
-
     chart_json = plot_to_json(fig_duel)
 
     res_a = df_relatorios[(df_relatorios['nome_marca'] == marca_a) & (df_relatorios['nome_modelo'] == modelo_a)]
@@ -346,8 +328,3 @@ async def compare(
 async def get_modelos(marca: str):
     modelos = sorted(df_motos[df_motos['nome_marca'] == marca]['nome_modelo'].unique())
     return {"modelos": modelos}
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)

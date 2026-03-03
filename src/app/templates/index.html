@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block header_extras %}
+<span x-show="usuarioVip" class="badge-vip" x-cloak>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+    </svg>
+    VIP Ativo
+</span>
+{% endblock %}
+
+{% block body_attrs %}x-data="appData()"{% endblock %}
+
+{# Inject server-side values as a JSON island — keeps JS free of Jinja tags #}
+{% block extra_head %}
+<script id="app-config" type="application/json">
+{
+    "usuarioVip":      {{ usuario_vip | tojson }},
+    "consultasFeitas": {{ consultas_feitas | tojson }},
+    "restantes":       {{ restantes | tojson }}
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col lg:flex-row gap-6">
+
+    {% include "partials/sidebar.html" %}
+
+    <main class="flex-1 min-w-0">
+        <div class="panel overflow-hidden">
+            <div class="flex overflow-x-auto border-b border-slate-200 dark:border-slate-700">
+                <button id="tab-pesquisa" @click="abaAtiva = 'pesquisa'"
+                    :class="abaAtiva === 'pesquisa' ? 'tab-btn active-search' : 'tab-btn'">
+                    📉 Desvalorização
+                </button>
+                <button id="tab-vip" @click="abaAtiva = 'vip'"
+                    :class="abaAtiva === 'vip' ? 'tab-btn active-vip' : 'tab-btn'">
+                    🏆 Relatórios VIP
+                </button>
+                <button id="tab-comparador" @click="abaAtiva = 'comparador'"
+                    :class="abaAtiva === 'comparador' ? 'tab-btn active-compare' : 'tab-btn'">
+                    ⚔️ Tira-Teima
+                </button>
+            </div>
+
+            {% include "partials/tab_search.html" %}
+            {% include "partials/tab_vip.html" %}
+            {% include "partials/tab_compare.html" %}
+        </div>
+    </main>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function appData() {
+        const cfg = JSON.parse(document.getElementById('app-config').textContent);
+
+        return {
+            usuarioVip: cfg.usuarioVip,
+            consultasFeitas: cfg.consultasFeitas,
+            restantes: cfg.restantes,
+            senha: '',
+            abaAtiva: 'pesquisa',
+            marcaSelecionada: '',
+            modeloSelecionado: '',
+            modelosDisponiveis: [],
+            resultado: null,
+            degustacao: [],
+            comparar: {
+                motoA: { marca: '', modelo: '' },
+                motoB: { marca: '', modelo: '' }
+            },
+            modelosComparacao: { A: [], B: [] },
+            comparacaoResultado: null,
+
+            async login() {
+                const formData = new FormData();
+                formData.append('senha', this.senha);
+                const res = await fetch('/api/login', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.vip) {
+                    this.usuarioVip = true;
+                    this.carregarRelatoriosVip();
+                } else {
+                    alert('Código inválido');
+                }
+            },
+
+            async carregarModelos() {
+                if (!this.marcaSelecionada) return;
+                const res = await fetch(`/api/modelos/${encodeURIComponent(this.marcaSelecionada)}`);
+                const data = await res.json();
+                this.modelosDisponiveis = data.modelos;
+                this.modeloSelecionado = '';
+            },
+
+            async analisar() {
+                if (!this.marcaSelecionada || !this.modeloSelecionado) {
+                    alert('Selecione uma marca e modelo!');
+                    return;
+                }
+                const formData = new FormData();
+                formData.append('marca', this.marcaSelecionada);
+                formData.append('modelo', this.modeloSelecionado);
+
+                const res = await fetch('/api/analyze', { method: 'POST', body: formData });
+                if (res.status === 403) { this.consultasFeitas = 6; return; }
+                if (!res.ok) { alert('Erro ao analisar. Tente novamente.'); return; }
+
+                this.resultado = await res.json();
+                this.consultasFeitas++;
+                this.restantes = Math.max(0, 6 - this.consultasFeitas);
+
+                this.$nextTick(() => {
+                    const parsed = JSON.parse(this.resultado.grafico);
+                    const layout = { ...parsed.layout, paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', font: { family: 'Inter' } };
+                    Plotly.newPlot('grafico-desvalorizacao', parsed.data, layout, { responsive: true });
+                });
+            },
+
+            async carregarRelatoriosVip() {
+                const res = await fetch('/api/vip/reports');
+                const data = await res.json();
+                if (!data.vip) {
+                    this.degustacao = data.degustacao;
+                } else {
+                    this.$nextTick(() => {
+                        this.renderTabela('tabela-recentes', data.recentes, ['Marca', 'Modelo', 'Ano', 'Preço', 'Perda/Ano']);
+                        this.renderTabela('tabela-baratas', data.baratas, ['Marca', 'Modelo', 'Preço Máx.', 'Perda/Ano']);
+                        this.renderTabela('tabela-bombas', data.bombas, ['Marca', 'Modelo', 'Ano Ref.', 'Preço Atual', 'Derretimento']);
+                    });
+                }
+            },
+
+            renderTabela(elementId, dados, colunas) {
+                const el = document.getElementById(elementId);
+                if (!el) return;
+                let html = '<table class="data-table"><thead><tr>';
+                colunas.forEach(col => { html += `<th scope="col">${col}</th>`; });
+                html += '</tr></thead><tbody>';
+                dados.forEach(row => {
+                    html += '<tr>';
+                    Object.values(row).forEach(val => {
+                        const fmt = typeof val === 'number' ? val.toFixed(2) : val;
+                        html += `<td>${fmt}</td>`;
+                    });
+                    html += '</tr>';
+                });
+                html += '</tbody></table>';
+                el.innerHTML = html;
+            },
+
+            carregarModelosComparacao(lado) {
+                const marca = lado === 'A' ? this.comparar.motoA.marca : this.comparar.motoB.marca;
+                if (!marca) return;
+                fetch(`/api/modelos/${encodeURIComponent(marca)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        this.modelosComparacao[lado] = data.modelos;
+                        if (lado === 'A') this.comparar.motoA.modelo = '';
+                        else this.comparar.motoB.modelo = '';
+                    });
+            },
+
+            async compararMotos() {
+                if (!this.comparar.motoA.marca || !this.comparar.motoA.modelo ||
+                    !this.comparar.motoB.marca || !this.comparar.motoB.modelo) {
+                    alert('Selecione ambas as motos!');
+                    return;
+                }
+                const formData = new FormData();
+                formData.append('marca_a', this.comparar.motoA.marca);
+                formData.append('modelo_a', this.comparar.motoA.modelo);
+                formData.append('marca_b', this.comparar.motoB.marca);
+                formData.append('modelo_b', this.comparar.motoB.modelo);
+
+                const res = await fetch('/api/compare', { method: 'POST', body: formData });
+                if (res.status === 403) { alert('Comparador exclusivo para VIP!'); return; }
+                if (!res.ok) { alert('Erro ao comparar.'); return; }
+
+                this.comparacaoResultado = await res.json();
+                this.$nextTick(() => {
+                    const parsed = JSON.parse(this.comparacaoResultado.grafico);
+                    const layout = { ...parsed.layout, paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', font: { family: 'Inter' } };
+                    Plotly.newPlot('grafico-comparacao', parsed.data, layout, { responsive: true });
+                });
+            },
+
+            init() {
+                this.carregarRelatoriosVip();
+            }
+        }
+    }
+</script>
+{% endblock %}
