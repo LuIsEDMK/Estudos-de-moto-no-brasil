@@ -1,0 +1,100 @@
+<!-- ── Tab: Pesquisa / Desvalorização ── -->
+<div x-show="abaAtiva === 'pesquisa'" class="p-6" x-cloak>
+
+    <!-- Paywall: Limit reached -->
+    <div x-show="consultasFeitas >= 6 && !usuarioVip" x-cloak class="flex flex-col gap-4">
+        <div class="alert alert-danger">
+            <p class="font-bold">⚠️ Limite gratuito atingido (6 / 6)</p>
+        </div>
+        <div class="panel p-6">
+            <h3 class="text-lg font-bold mb-2 text-slate-900 dark:text-white">🛑 Não compre sua moto no escuro!</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                Por apenas <strong class="text-slate-900 dark:text-white">R$ 9,90</strong> você desbloqueia:
+            </p>
+            <ul class="space-y-2 text-sm mb-5 text-slate-700 dark:text-slate-300">
+                <li class="flex items-center gap-2"><span class="text-emerald-500" aria-hidden="true">✅</span> Consultas
+                    ilimitadas</li>
+                <li class="flex items-center gap-2"><span class="text-emerald-500" aria-hidden="true">✅</span> Preços e
+                    desvalorizações dos anos mais recentes</li>
+                <li class="flex items-center gap-2"><span class="text-emerald-500" aria-hidden="true">✅</span> Ranking
+                    VIP das melhores motos do Brasil</li>
+            </ul>
+            <a href="https://www.mercadopago.com.br" target="_blank" rel="noopener"
+                class="btn-cta bg-orange-600 hover:bg-orange-700 text-white">
+                💳 Desbloquear Acesso VIP por R$ 9,90
+            </a>
+        </div>
+    </div>
+
+    <!-- Empty state -->
+    <div x-show="!resultado && consultasFeitas === 0"
+        class="flex flex-col items-center justify-center py-16 text-slate-400 dark:text-slate-500" x-cloak>
+        <svg class="w-12 h-12 mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+        <p class="text-sm font-medium">Selecione uma marca e modelo para começar</p>
+    </div>
+
+    <!-- Results -->
+    <div x-show="resultado && !(consultasFeitas >= 6 && !usuarioVip)" x-cloak>
+        <h2 class="text-xl font-bold mb-5 text-slate-900 dark:text-white"
+            x-text="'Análise: ' + resultado.marca + ' ' + resultado.modelo"></h2>
+
+        <!-- Stat cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div class="stat-card">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Modelo
+                    Mais Novo</p>
+                <p class="text-xl font-bold font-mono text-sky-600 dark:text-sky-400" x-text="resultado.preco_novo"></p>
+            </div>
+            <div class="stat-card">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Modelo
+                    Mais Antigo</p>
+                <p class="text-xl font-bold font-mono text-slate-700 dark:text-slate-200"
+                    x-text="resultado.preco_velho"></p>
+            </div>
+            <div class="stat-card">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                    Desvalorização Histórica</p>
+                <p class="text-xl font-bold font-mono text-red-600 dark:text-red-400" x-text="resultado.desvalorizacao">
+                </p>
+            </div>
+        </div>
+
+        <!-- Table + Chart -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Tabela
+                    FIPE</h3>
+                <div class="panel overflow-hidden">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Ano</th>
+                                <th scope="col">Valor de Mercado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in resultado.tabela" :key="item.ano">
+                                <tr>
+                                    <td x-text="item.ano"></td>
+                                    <td x-text="item.valor"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+                <p x-show="!usuarioVip" class="text-xs text-slate-400 dark:text-slate-500 mt-2">
+                    🔒 Assine o VIP para ver os anos mais recentes.
+                </p>
+            </div>
+            <div class="lg:col-span-2">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Impacto
+                    Financeiro por Ano</h3>
+                <div id="grafico-desvalorizacao" class="w-full h-72 rounded-lg overflow-hidden"></div>
+            </div>
+        </div>
+    </div>
+
+</div>

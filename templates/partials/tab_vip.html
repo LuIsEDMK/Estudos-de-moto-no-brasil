@@ -1,0 +1,89 @@
+<!-- ── Tab: VIP Reports ── -->
+<div x-show="abaAtiva === 'vip'" class="p-6" x-cloak>
+
+    <!-- Non-VIP teaser -->
+    <div x-show="!usuarioVip">
+        <h2 class="text-xl font-bold mb-1 text-slate-900 dark:text-white">🔒 Área Restrita — Membros VIP</h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Descubra os segredos que as concessionárias não
+            querem que você saiba.</p>
+
+        <div class="panel overflow-hidden mb-6">
+            <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Prévia —
+                    Motos que menos desvalorizam no Brasil</p>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Pos.</th>
+                        <th scope="col">Marca</th>
+                        <th scope="col">Modelo</th>
+                        <th scope="col">Preço</th>
+                        <th scope="col">Perda/Ano</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="item in degustacao" :key="item.ranking">
+                        <tr>
+                            <td x-text="item.ranking"></td>
+                            <td x-text="item.marca"></td>
+                            <td x-text="item.modelo"></td>
+                            <td x-text="item.preco"></td>
+                            <td x-text="item.perda"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="panel p-6">
+            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                Ao assinar o VIP por <strong class="text-slate-900 dark:text-white">R$ 9,90</strong>, você desbloqueia o
+                nome real dessas motos e muito mais.
+            </p>
+            <a href="https://www.mercadopago.com.br" target="_blank" rel="noopener"
+                class="btn-cta bg-amber-500 hover:bg-amber-600 text-white">
+                💳 Quero Desbloquear os Relatórios
+            </a>
+        </div>
+    </div>
+
+    <!-- VIP content -->
+    <div x-show="usuarioVip" x-cloak>
+        <div class="alert alert-success mb-6">
+            👑 Bem-vindo à Área VIP! Aqui estão os seus relatórios exclusivos.
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+            <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+                    🏆 Top 10 — Moedas Fortes (≥ 2024)
+                </h3>
+                <div class="panel overflow-hidden">
+                    <div id="tabela-recentes"></div>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                    💸 Guerreiras Baratas (até R$ 15k, ≥ 2018)
+                </h3>
+                <p class="text-xs text-slate-400 dark:text-slate-500 mb-3">Melhores custo-benefício de revenda</p>
+                <div class="panel overflow-hidden">
+                    <div id="tabela-baratas"></div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-red-500 dark:text-red-400 mb-1">
+                🚨 Muro da Vergonha — As Bombas de Revenda
+            </h3>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mb-3">Maior queda de valor anual — evite se o foco for
+                revenda</p>
+            <div class="panel overflow-hidden">
+                <div id="tabela-bombas"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
