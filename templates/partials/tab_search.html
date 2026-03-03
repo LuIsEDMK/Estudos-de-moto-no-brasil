@@ -7,11 +7,11 @@
             <p class="font-bold">⚠️ Limite gratuito atingido (6 / 6)</p>
         </div>
         <div class="panel p-6">
-            <h3 class="text-lg font-bold mb-2 text-slate-900 dark:text-white">🛑 Não compre sua moto no escuro!</h3>
-            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                Por apenas <strong class="text-slate-900 dark:text-white">R$ 9,90</strong> você desbloqueia:
+            <h3 class="text-lg font-bold mb-2" style="color: rgb(var(--color-content));">🛑 Não compre sua moto no escuro!</h3>
+            <p class="text-sm mb-4" style="color: rgb(var(--color-content-muted));">
+                Por apenas <strong style="color: rgb(var(--color-content));">R$ 9,90</strong> você desbloqueia:
             </p>
-            <ul class="space-y-2 text-sm mb-5 text-slate-700 dark:text-slate-300">
+            <ul class="space-y-2 text-sm mb-5" style="color: rgb(var(--color-content));">
                 <li class="flex items-center gap-2"><span class="text-emerald-500" aria-hidden="true">✅</span> Consultas
                     ilimitadas</li>
                 <li class="flex items-center gap-2"><span class="text-emerald-500" aria-hidden="true">✅</span> Preços e
@@ -28,7 +28,7 @@
 
     <!-- Empty state -->
     <div x-show="!resultado && consultasFeitas === 0"
-        class="flex flex-col items-center justify-center py-16 text-slate-400 dark:text-slate-500" x-cloak>
+        class="flex flex-col items-center justify-center py-16" style="color: rgb(var(--color-content-muted));" x-cloak>
         <svg class="w-12 h-12 mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                 d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -38,24 +38,23 @@
 
     <!-- Results -->
     <div x-show="resultado && !(consultasFeitas >= 6 && !usuarioVip)" x-cloak>
-        <h2 class="text-xl font-bold mb-5 text-slate-900 dark:text-white"
+        <h2 class="text-xl font-bold mb-5" style="color: rgb(var(--color-content));"
             x-text="'Análise: ' + resultado.marca + ' ' + resultado.modelo"></h2>
 
         <!-- Stat cards -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <div class="stat-card">
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Modelo
+                <p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: rgb(var(--color-content-muted));">Modelo
                     Mais Novo</p>
                 <p class="text-xl font-bold font-mono text-sky-600 dark:text-sky-400" x-text="resultado.preco_novo"></p>
             </div>
             <div class="stat-card">
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Modelo
+                <p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: rgb(var(--color-content-muted));">Modelo
                     Mais Antigo</p>
-                <p class="text-xl font-bold font-mono text-slate-700 dark:text-slate-200"
-                    x-text="resultado.preco_velho"></p>
+                <p class="text-xl font-bold font-mono" style="color: rgb(var(--color-content));" x-text="resultado.preco_velho"></p>
             </div>
             <div class="stat-card">
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                <p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color: rgb(var(--color-content-muted));">
                     Desvalorização Histórica</p>
                 <p class="text-xl font-bold font-mono text-red-600 dark:text-red-400" x-text="resultado.desvalorizacao">
                 </p>
@@ -65,7 +64,7 @@
         <!-- Table + Chart -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div>
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Tabela
+                <h3 class="text-xs font-bold uppercase tracking-wider mb-3" style="color: rgb(var(--color-content-muted));">Tabela
                     FIPE</h3>
                 <div class="panel overflow-hidden">
                     <table class="data-table">
@@ -85,12 +84,12 @@
                         </tbody>
                     </table>
                 </div>
-                <p x-show="!usuarioVip" class="text-xs text-slate-400 dark:text-slate-500 mt-2">
+                <p x-show="!usuarioVip" class="text-xs mt-2" style="color: rgb(var(--color-content-muted));">
                     🔒 Assine o VIP para ver os anos mais recentes.
                 </p>
             </div>
             <div class="lg:col-span-2">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Impacto
+                <h3 class="text-xs font-bold uppercase tracking-wider mb-3" style="color: rgb(var(--color-content-muted));">Impacto
                     Financeiro por Ano</h3>
                 <div id="grafico-desvalorizacao" class="w-full h-72 rounded-lg overflow-hidden"></div>
             </div>
