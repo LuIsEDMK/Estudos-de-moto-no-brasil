@@ -1,0 +1,55 @@
+/* ========================================
+   TAB SYSTEM
+   ======================================== */
+
+.tab-btn {
+    padding: 0.875rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    color: rgb(var(--color-content-muted));
+}
+
+.tab-btn:hover {
+    color: rgb(var(--color-content));
+    border-bottom-color: rgb(var(--color-border));
+}
+
+.tab-btn:focus { 
+    outline: none; 
+}
+
+/* Active states by tab type */
+.tab-btn.active-search {
+    border-bottom-color: rgb(249 115 22);
+    color: rgb(234 88 12);
+}
+
+.dark .tab-btn.active-search { 
+    color: rgb(251 146 60); 
+}
+
+.tab-btn.active-vip {
+    border-bottom-color: rgb(245 158 11);
+    color: rgb(217 119 6);
+}
+
+.dark .tab-btn.active-vip { 
+    color: rgb(252 211 77); 
+}
+
+.tab-btn.active-compare {
+    border-bottom-color: rgb(14 165 233);
+    color: rgb(2 132 199);
+}
+
+.dark .tab-btn.active-compare { 
+    color: rgb(56 189 248); 
+}

@@ -1,0 +1,21 @@
+/* ========================================
+   BADGES & LABELS
+   ======================================== */
+
+/* VIP Badge */
+.badge-vip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgb(254 243 199);
+    color: rgb(146 64 14);
+}
+
+.dark .badge-vip {
+    background: rgba(120, 53, 15, 0.4);
+    color: rgb(252 211 77);
+}

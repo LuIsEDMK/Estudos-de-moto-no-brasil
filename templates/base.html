@@ -51,387 +51,69 @@
             }
         }
     </script>
-    <style>
-        /* ========================================
-           CSS CUSTOM PROPERTIES - THEME SYSTEM
-           Single source of truth for all colors
-           ======================================== */
-        :root {
-            /* Light mode colors (RGB values for opacity support) */
-            --color-bg: 248 250 252;               /* slate-50 */
-            --color-surface: 255 255 255;          /* white */
-            --color-surface-elevated: 255 255 255; /* white */
-            --color-content: 15 23 42;             /* slate-900 */
-            --color-content-muted: 100 116 139;    /* slate-500 */
-            --color-border: 226 232 240;           /* slate-200 */
-            --color-border-subtle: 241 245 249;    /* slate-100 */
-            --color-input-bg: 255 255 255;
-            --color-input-border: 203 213 225;     /* slate-300 */
-            --color-table-header: 248 250 252;     /* slate-50 */
-            --color-table-row-hover: 248 250 252;
-            
-            /* Semantic colors */
-            --color-danger-bg: 254 242 242;
-            --color-danger-border: 254 202 202;
-            --color-danger-text: 153 27 27;
-            --color-success-bg: 236 253 245;
-            --color-success-border: 167 243 208;
-            --color-success-text: 6 78 59;
-            --color-info-bg: 240 249 255;
-            --color-info-border: 186 230 253;
-            --color-info-text: 12 74 110;
-        }
-
-        .dark {
-            /* Dark mode colors */
-            --color-bg: 15 23 42;                  /* slate-900 */
-            --color-surface: 30 41 59;             /* slate-800 */
-            --color-surface-elevated: 51 65 85;    /* slate-700 */
-            --color-content: 241 245 249;          /* slate-100 */
-            --color-content-muted: 148 163 184;    /* slate-400 */
-            --color-border: 51 65 85;              /* slate-700 */
-            --color-border-subtle: 30 41 59;       /* slate-800 */
-            --color-input-bg: 30 41 59;
-            --color-input-border: 71 85 105;       /* slate-600 */
-            --color-table-header: 51 65 85;
-            --color-table-row-hover: 51 65 85;
-            
-            /* Semantic colors - dark mode */
-            --color-danger-bg: 127 29 29;
-            --color-danger-border: 153 27 27;
-            --color-danger-text: 252 165 165;
-            --color-success-bg: 6 78 59;
-            --color-success-border: 6 78 59;
-            --color-success-text: 110 231 183;
-            --color-info-bg: 12 74 110;
-            --color-info-border: 12 74 110;
-            --color-info-text: 125 211 252;
-        }
-
-        /* ========================================
-           BASE STYLES
-           ======================================== */
-        [x-cloak] { display: none !important; }
-
-        body {
-            background: rgb(var(--color-bg));
-            color: rgb(var(--color-content));
-        }
-
-        /* ========================================
-           COMPONENT STYLES - Using CSS variables
-           ======================================== */
-
-        /* Form Controls */
-        .form-control {
-            width: 100%;
-            padding: 0.5rem 0.75rem;
-            border-radius: 0.5rem;
-            border: 1px solid rgb(var(--color-input-border));
-            background: rgb(var(--color-input-bg));
-            color: rgb(var(--color-content));
-            font-size: 0.875rem;
-            font-family: inherit;
-            transition: border-color 0.15s, box-shadow 0.15s;
-        }
-
-        .form-control::placeholder {
-            color: rgb(var(--color-content-muted) / 0.7);
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: rgb(249 115 22);
-            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
-        }
-
-        /* Buttons */
-        .btn-primary {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            width: 100%;
-            padding: 0.625rem 1rem;
-            border-radius: 0.5rem;
-            border: none;
-            background: rgb(234 88 12);
-            color: #fff;
-            font-size: 0.875rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.15s, box-shadow 0.15s;
-        }
-
-        .btn-primary:hover { background: rgb(194 65 12); }
-
-        .btn-primary:focus {
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.35);
-        }
-
-        .btn-cta {
-            display: inline-block;
-            padding: 0.625rem 1.25rem;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.15s, box-shadow 0.15s;
-            text-decoration: none;
-        }
-
-        .btn-cta:focus {
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.35);
-        }
-
-        /* Panels & Cards */
-        .panel {
-            border-radius: 0.75rem;
-            border: 1px solid rgb(var(--color-border));
-            background: rgb(var(--color-surface));
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
-
-        .dark .panel {
-            background: rgba(30, 41, 59, 0.6);
-        }
-
-        .stat-card {
-            border-radius: 0.75rem;
-            border: 1px solid rgb(var(--color-border));
-            background: rgb(var(--color-surface));
-            padding: 1rem;
-        }
-
-        /* Data Table */
-        .data-table {
-            width: 100%;
-            font-size: 0.875rem;
-            border-collapse: collapse;
-        }
-
-        .data-table thead {
-            background: rgb(var(--color-table-header));
-        }
-
-        .dark .data-table thead {
-            background: rgba(51, 65, 85, 0.5);
-        }
-
-        .data-table th {
-            padding: 0.5rem 1rem;
-            text-align: left;
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            color: rgb(var(--color-content-muted));
-        }
-
-        .data-table td {
-            padding: 0.5rem 1rem;
-            font-family: 'JetBrains Mono', monospace;
-            color: rgb(var(--color-content));
-        }
-
-        .data-table tbody tr {
-            border-top: 1px solid rgb(var(--color-border-subtle));
-            transition: background 0.1s;
-        }
-
-        .dark .data-table tbody tr {
-            border-color: rgb(var(--color-border));
-        }
-
-        .data-table tbody tr:hover {
-            background: rgb(var(--color-table-row-hover));
-        }
-
-        .dark .data-table tbody tr:hover {
-            background: rgba(51, 65, 85, 0.3);
-        }
-
-        /* Alerts - using CSS variables */
-        .alert {
-            border-radius: 0.5rem;
-            border: 1px solid;
-            padding: 0.75rem 1rem;
-            font-size: 0.875rem;
-        }
-
-        .alert-danger {
-            background: rgb(var(--color-danger-bg));
-            border-color: rgb(var(--color-danger-border));
-            color: rgb(var(--color-danger-text));
-        }
-
-        .alert-success {
-            background: rgb(var(--color-success-bg));
-            border-color: rgb(var(--color-success-border));
-            color: rgb(var(--color-success-text));
-        }
-
-        .alert-info {
-            background: rgb(var(--color-info-bg));
-            border-color: rgb(var(--color-info-border));
-            color: rgb(var(--color-info-text));
-        }
-
-        /* Sidebar Labels */
-        .sidebar-label {
-            display: block;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.375rem;
-            color: rgb(var(--color-content-muted));
-        }
-
-        /* VIP Badge */
-        .badge-vip {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.375rem;
-            padding: 0.25rem 0.625rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: rgb(254 243 199);
-            color: rgb(146 64 14);
-        }
-
-        .dark .badge-vip {
-            background: rgba(120, 53, 15, 0.4);
-            color: rgb(252 211 77);
-        }
-
-        /* Tab System */
-        .tab-btn {
-            padding: 0.875rem 1.25rem;
-            font-size: 0.875rem;
-            font-weight: 600;
-            border-bottom: 2px solid transparent;
-            white-space: nowrap;
-            cursor: pointer;
-            transition: color 0.15s, border-color 0.15s;
-            background: none;
-            border-top: none;
-            border-left: none;
-            border-right: none;
-            color: rgb(var(--color-content-muted));
-        }
-
-        .tab-btn:hover {
-            color: rgb(var(--color-content));
-            border-bottom-color: rgb(var(--color-border));
-        }
-
-        .tab-btn:focus { outline: none; }
-
-        .tab-btn.active-search {
-            border-bottom-color: rgb(249 115 22);
-            color: rgb(234 88 12);
-        }
-
-        .dark .tab-btn.active-search { color: rgb(251 146 60); }
-
-        .tab-btn.active-vip {
-            border-bottom-color: rgb(245 158 11);
-            color: rgb(217 119 6);
-        }
-
-        .dark .tab-btn.active-vip { color: rgb(252 211 77); }
-
-        .tab-btn.active-compare {
-            border-bottom-color: rgb(14 165 233);
-            color: rgb(2 132 199);
-        }
-
-        .dark .tab-btn.active-compare { color: rgb(56 189 248); }
-
-        /* Theme Toggle */
-        #theme-toggle {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 2.25rem;
-            height: 2.25rem;
-            border-radius: 0.5rem;
-            border: none;
-            background: transparent;
-            color: rgb(var(--color-content-muted));
-            cursor: pointer;
-            transition: background 0.15s, color 0.15s;
-        }
-
-        #theme-toggle:hover {
-            background: rgb(var(--color-border-subtle));
-            color: rgb(var(--color-content));
-        }
-
-        #theme-toggle:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px rgb(249 115 22);
-        }
-    </style>
+    <!-- Modular CSS -->
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/forms.css">
+    <link rel="stylesheet" href="/static/css/buttons.css">
+    <link rel="stylesheet" href="/static/css/cards.css">
+    <link rel="stylesheet" href="/static/css/tables.css">
+    <link rel="stylesheet" href="/static/css/alerts.css">
+    <link rel="stylesheet" href="/static/css/tabs.css">
+    <link rel="stylesheet" href="/static/css/badges.css">
+    <link rel="stylesheet" href="/static/css/theme-toggle.css">
     {% block extra_head %}{% endblock %}
 </head>
 
-<body
-    class="min-h-screen font-sans antialiased bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-200"
-    {% block body_attrs %}{% endblock %}>
+    <body class="min-h-screen font-sans antialiased transition-colors duration-200"
+        {% block body_attrs %}{% endblock %}>
 
-    <!-- ── Header ── -->
-    <header
-        class="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3 min-w-0">
-                <span class="text-2xl" aria-hidden="true">🏍️</span>
-                <div class="min-w-0">
-                    <span class="text-lg font-bold leading-none text-slate-900 dark:text-white">MotoExpert AI</span>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Análise de desvalorização FIPE
-                    </p>
+        <!-- ── Header ── -->
+        <header class="sticky top-0 z-30 border-b backdrop-blur-sm transition-colors duration-200"
+            style="background: rgba(var(--color-surface), 0.9); border-color: rgb(var(--color-border));">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3 min-w-0">
+                    <span class="text-2xl" aria-hidden="true">🏍️</span>
+                    <div class="min-w-0">
+                        <span class="text-lg font-bold leading-none" style="color: rgb(var(--color-content));">MotoExpert AI</span>
+                        <p class="text-xs hidden sm:block" style="color: rgb(var(--color-content-muted));">Análise de desvalorização FIPE</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    {% block header_extras %}{% endblock %}
+                    <button id="theme-toggle" aria-label="Toggle theme"></button>
                 </div>
             </div>
-            <div class="flex items-center gap-2 flex-shrink-0">
-                {% block header_extras %}{% endblock %}
-                <button id="theme-toggle" aria-label="Toggle theme"></button>
-            </div>
+        </header>
+
+        <!-- ── Page Content ── -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+            {% block content %}{% endblock %}
         </div>
-    </header>
 
-    <!-- ── Page Content ── -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        {% block content %}{% endblock %}
-    </div>
+        <!-- ── Theme Toggle Script ── -->
+        <script>
+            (function () {
+                const btn = document.getElementById('theme-toggle');
+                const sun = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+                const moon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+                
+                function syncIcon() {
+                    if (btn) btn.innerHTML = document.documentElement.classList.contains('dark') ? sun : moon;
+                }
+                
+                syncIcon();
+                
+                if (btn) {
+                    btn.addEventListener('click', () => {
+                        const isDark = document.documentElement.classList.toggle('dark');
+                        localStorage.theme = isDark ? 'dark' : 'light';
+                        syncIcon();
+                    });
+                }
+            })();
+        </script>
 
-    <!-- ── Theme Toggle Script ── -->
-    <script>
-        (function () {
-            const btn = document.getElementById('theme-toggle');
-            const sun = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
-            const moon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
-            
-            function syncIcon() {
-                if (btn) btn.innerHTML = document.documentElement.classList.contains('dark') ? sun : moon;
-            }
-            
-            syncIcon();
-            
-            if (btn) {
-                btn.addEventListener('click', () => {
-                    const isDark = document.documentElement.classList.toggle('dark');
-                    localStorage.theme = isDark ? 'dark' : 'light';
-                    syncIcon();
-                });
-            }
-        })();
-    </script>
-
-    {% block extra_scripts %}{% endblock %}
-</body>
+        {% block extra_scripts %}{% endblock %}
+    </body>
 
 </html>
