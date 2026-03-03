@@ -1,30 +1,49 @@
-import pandas as pd
+"""VIP authentication - lightweight version without pandas."""
+import csv
+from io import StringIO
 
-# O link da sua planilha (substitua pelo link que você copiou)
+# O link da sua planilha
 URL_PLANILHA = "https://docs.google.com/spreadsheets/d/199fjvVptWCdA3YD_bVwhrAJRS_PYyfqf0O8jbo4QFB4/edit?usp=sharing"
 
 
-def validar_codigo_vip(codigo_digitado):
+def _fetch_csv_content(url: str) -> str:
+    """Fetch CSV content from URL."""
+    try:
+        import urllib.request
+        with urllib.request.urlopen(url, timeout=10) as response:
+            return response.read().decode('utf-8')
+    except Exception:
+        return ""
+
+
+def validar_codigo_vip(codigo_digitado: str) -> bool:
     """
     Conecta na planilha e verifica se o código existe.
     """
     if not codigo_digitado:
         return False
 
+    # Master code always works
+    if codigo_digitado.strip() == "MOTO990_MASTER":
+        return True
+
     try:
-        # Transforma o link da planilha em um link de download de CSV (truque de mestre)
+        # Transforma o link da planilha em um link de download de CSV
         csv_url = URL_PLANILHA.replace('/edit?usp=sharing', '/export?format=csv')
-        csv_url = csv_url.replace('/edit#gid=', '/export?format=csv&gid=')  # Caso tenha abas específicas
+        csv_url = csv_url.replace('/edit#gid=', '/export?format=csv&gid=')
 
-        # Lê a planilha em tempo real (sem cache para não travar novos códigos)
-        df_codigos = pd.read_csv(csv_url)
+        # Fetch CSV content
+        csv_content = _fetch_csv_content(csv_url)
+        if not csv_content:
+            return False
 
-        # Limpa espaços em branco e garante que tudo seja string
-        lista_codigos = df_codigos['codigos'].astype(str).str.strip().tolist()
-
-        # Verifica se o código está lá (incluindo o seu código mestre)
-        if codigo_digitado.strip() in lista_codigos or codigo_digitado == "MOTO990_MASTER":
-            return True
+        # Parse CSV using stdlib
+        reader = csv.DictReader(StringIO(csv_content))
+        for row in reader:
+            codigo_planilha = str(row.get('codigos', '')).strip()
+            if codigo_digitado.strip() == codigo_planilha:
+                return True
+        
         return False
     except Exception as e:
         print(f"Erro na conexão com o Banco de Dados VIP: {e}")

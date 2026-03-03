@@ -115,9 +115,27 @@
                 this.restantes = Math.max(0, 6 - this.consultasFeitas);
 
                 this.$nextTick(() => {
-                    const parsed = JSON.parse(this.resultado.grafico);
-                    const layout = { ...parsed.layout, paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', font: { family: 'Inter' } };
-                    Plotly.newPlot('grafico-desvalorizacao', parsed.data, layout, { responsive: true });
+                    const g = this.resultado.grafico;
+                    const trace = {
+                        x: g.periodos,
+                        y: g.valores,
+                        type: 'bar',
+                        marker: { color: g.cores },
+                        text: g.textos,
+                        textposition: 'outside',
+                        hovertemplate: '<b>Período:</b> %{x}<br><b>%{customdata}</b><extra></extra>',
+                        customdata: g.hovers
+                    };
+                    const layout = {
+                        xaxis: { title: 'Passagem dos Anos', type: 'category' },
+                        yaxis: { title: 'Impacto Financeiro (R$)' },
+                        margin: { l: 20, r: 20, t: 30, b: 20 },
+                        paper_bgcolor: 'transparent',
+                        plot_bgcolor: 'transparent',
+                        font: { family: 'Inter' },
+                        showlegend: false
+                    };
+                    Plotly.newPlot('grafico-desvalorizacao', [trace], layout, { responsive: true });
                 });
             },
 
@@ -183,9 +201,31 @@
 
                 this.comparacaoResultado = await res.json();
                 this.$nextTick(() => {
-                    const parsed = JSON.parse(this.comparacaoResultado.grafico);
-                    const layout = { ...parsed.layout, paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', font: { family: 'Inter' } };
-                    Plotly.newPlot('grafico-comparacao', parsed.data, layout, { responsive: true });
+                    const g = this.comparacaoResultado.grafico;
+                    const traceA = {
+                        x: g.moto_a.dados.map(d => d[0]),
+                        y: g.moto_a.dados.map(d => d[1]),
+                        mode: 'lines+markers',
+                        name: g.moto_a.nome,
+                        type: 'scatter'
+                    };
+                    const traceB = {
+                        x: g.moto_b.dados.map(d => d[0]),
+                        y: g.moto_b.dados.map(d => d[1]),
+                        mode: 'lines+markers',
+                        name: g.moto_b.nome,
+                        type: 'scatter'
+                    };
+                    const layout = {
+                        title: `Evolução de Preço: ${g.moto_a.nome} vs ${g.moto_b.nome}`,
+                        xaxis: { title: 'Ano' },
+                        yaxis: { title: 'Preço FIPE (R$)' },
+                        paper_bgcolor: 'transparent',
+                        plot_bgcolor: 'transparent',
+                        font: { family: 'Inter' },
+                        legend: { orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }
+                    };
+                    Plotly.newPlot('grafico-comparacao', [traceA, traceB], layout, { responsive: true });
                 });
             },
 
