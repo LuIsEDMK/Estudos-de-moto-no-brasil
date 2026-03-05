@@ -4,11 +4,12 @@ import { getModelos } from '$lib/server/data';
 import type { TipoVeiculo } from '$lib/types';
 
 export const GET: RequestHandler = async ({ params }) => {
-	const tipo = params.tipo as TipoVeiculo;
+	const tipoRaw = params.tipo.toUpperCase();
+	const tipo = tipoRaw as TipoVeiculo;
 	const marca = decodeURIComponent(params.marca);
 
 	if (!['MOTORCYCLE', 'CAR', 'TRUCK'].includes(tipo)) {
-		throw error(400, 'Tipo inválido');
+		throw error(400, 'Tipo inválido: ' + params.tipo);
 	}
 
 	if (!marca) {

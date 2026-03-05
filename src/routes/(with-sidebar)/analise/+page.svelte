@@ -2,7 +2,9 @@
 	import { page } from '$app/state';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { ui } from '$lib/stores/ui.svelte';
-	import DepreciationChart from '$lib/components/charts/DepreciationChart.svelte';
+	import PriceEvolutionChart from '$lib/components/charts/PriceEvolutionChart.svelte';
+	import ValueRetentionChart from '$lib/components/charts/ValueRetentionChart.svelte';
+	import YearlyDropChart from '$lib/components/charts/YearlyDropChart.svelte';
 	import type { AnalysisResult } from '$lib/types';
 	import { onMount } from 'svelte';
 
@@ -15,16 +17,17 @@
 	const tipo = $derived(page.url.searchParams.get('tipo') || 'MOTORCYCLE');
 
 	let analyzedKey = $state<string>('');
+	let lastVipState = $state<boolean>(false);
 
 	onMount(() => {
 		ui.loadAndInit();
 	});
 
-	async function analyze() {
+	async function analyze(force = false) {
 		if (!marca || !modelo) return;
 
-		const currentKey = `${marca}-${modelo}-${tipo}`;
-		if (currentKey === analyzedKey) return;
+		const currentKey = `${marca}-${modelo}-${tipo}-${auth.usuarioVip}`;
+		if (!force && currentKey === analyzedKey) return;
 
 		loading = true;
 		error = null;
@@ -34,28 +37,21 @@
 			formData.append('marca', marca);
 			formData.append('modelo', modelo);
 			formData.append('tipo', tipo);
-			formData.append('consultas_feitas', String(ui.consultasFeitas));
+			formData.append('isVip', String(auth.usuarioVip));
 
 			const res = await fetch('/api/analyze', {
 				method: 'POST',
 				body: formData
 			});
 
-			if (res.status === 403) {
-				ui.setLimiteAtingido(true);
-				throw new Error('Limite de consultas atingido');
-			}
-
 			if (!res.ok) {
-				throw new Error('Erro ao analisar');
+				const err = await res.text();
+				throw new Error(err || 'Erro ao analisar');
 			}
 
 			resultado = await res.json();
 			analyzedKey = currentKey;
-
-			if (ui.shouldCountAsNew(currentKey)) {
-				ui.incrementarConsulta(currentKey);
-			}
+			lastVipState = auth.usuarioVip;
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Erro desconhecido';
 			resultado = null;
@@ -64,132 +60,271 @@
 		}
 	}
 
+	// Analisa quando marca/modelo ou VIP mudam
 	$effect(() => {
-		if (marca && modelo) {
-			analyze();
+		const _marca = marca;
+		const _modelo = modelo;
+		const _vip = auth.usuarioVip;
+		
+		if (_marca && _modelo) {
+			const force = _vip !== lastVipState && analyzedKey !== '';
+			analyze(force);
 		}
 	});
+
+	function formatCurrency(value: string): string {
+		return value;
+	}
 </script>
 
 {#if !marca || !modelo}
 	<div class="empty-state">
-		<p>Selecione uma marca e modelo na barra lateral</p>
+		<div class="empty-icon">🏍️</div>
+		<h2>Selecione um veículo</h2>
+		<p>Escolha a marca e modelo na barra lateral para ver a análise completa</p>
 	</div>
 {:else if loading}
-	<div class="loading">Analisando {marca} {modelo}...</div>
+	<div class="loading">
+		<div class="spinner"></div>
+		<p>Analisando {marca} {modelo}...</p>
+	</div>
 {:else if error}
-	<div class="error">{error}</div>
+	<div class="error">
+		<span class="error-icon">⚠️</span>
+		<p>{error}</p>
+	</div>
 {:else if resultado}
 	<div class="analysis">
+		<!-- Header -->
 		<div class="vehicle-header">
-			<h1 class="vehicle-name">{resultado.marca} {resultado.modelo}</h1>
+			<div class="vehicle-info">
+				<h1 class="vehicle-name">{resultado.marca} {resultado.modelo}</h1>
+				<span class="vehicle-type">{resultado.tipo === 'MOTORCYCLE' ? 'Moto' : resultado.tipo === 'CAR' ? 'Carro' : 'Caminhão'}</span>
+			</div>
 			<div class="price-summary">
-				<div class="price-item">
-					<span class="label">Novo</span>
+				<div class="price-item highlight">
+					<span class="label">Modelo Novo</span>
 					<span class="value">{resultado.preco_novo}</span>
 				</div>
 				<div class="price-item">
-					<span class="label">Antigo</span>
+					<span class="label">Modelo Antigo</span>
 					<span class="value">{resultado.preco_velho}</span>
 				</div>
-				<div class="price-item">
-					<span class="label">Desvalorização</span>
+				<div class="price-item alert">
+					<span class="label">Desvalorização Total</span>
 					<span class="value">{resultado.desvalorizacao}</span>
 				</div>
 			</div>
 		</div>
 
-		<div class="main-grid">
-			<div class="chart-section">
-				<h2 class="section-title">Gráfico de Impacto Financeiro</h2>
-				<DepreciationChart data={resultado.grafico} />
+		<!-- Insights -->
+		{#if resultado.insights}
+			<div class="insights-bar">
+				<div class="insight-item">
+					<span class="insight-label">📊 Anos Analisados</span>
+					<span class="insight-value">{resultado.insights.anos_analisados}</span>
+				</div>
+				<div class="insight-item">
+					<span class="insight-label">⭐ Ano Mais Estável</span>
+					<span class="insight-value">{resultado.insights.ano_mais_estavel || 'N/A'}</span>
+				</div>
+				<div class="insight-item">
+					<span class="insight-label">📉 Queda Média/Ano</span>
+					<span class="insight-value">{resultado.insights.queda_media_anual}</span>
+				</div>
+			</div>
+		{/if}
+
+		<!-- Gráficos -->
+		<div class="charts-grid">
+			<!-- Gráfico 1: Evolução do Preço -->
+			<div class="chart-card">
+				<div class="chart-header">
+					<h3>📈 Evolução do Preço</h3>
+					<p class="chart-desc">Veja como o valor mudou ao longo dos anos</p>
+				</div>
+				<div class="chart-body">
+					<PriceEvolutionChart 
+						data={resultado.grafico_price_evolution} 
+					/>
+				</div>
+				{#if !auth.usuarioVip}
+					<div class="vip-overlay">
+						<span>🔒 Dados históricos completos para VIPs</span>
+					</div>
+				{/if}
 			</div>
 
-			<div class="history-section">
-				<h2 class="section-title">Histórico de Preços</h2>
-				<div class="table-wrapper">
-					<table class="data-table">
-						<thead>
-							<tr>
-								<th>Ano</th>
-								<th>Valor FIPE</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each resultado.tabela as row}
-								<tr>
-									<td>{row.ano}</td>
-									<td class:locked={row.valor.includes('🔒')}>{row.valor}</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
+			<!-- Gráfico 2: Retenção de Valor -->
+			<div class="chart-card">
+				<div class="chart-header">
+					<h3>💎 Retenção de Valor</h3>
+					<p class="chart-desc">Quanto o veículo vale comparado ao modelo mais novo</p>
 				</div>
+				<div class="chart-body">
+					<ValueRetentionChart 
+						data={resultado.grafico_value_retention}
+					/>
+				</div>
+				{#if !auth.usuarioVip}
+					<div class="vip-overlay">
+						<span>🔒 Análise completa para VIPs</span>
+					</div>
+				{/if}
+			</div>
+
+			<!-- Gráfico 3: Queda Anual -->
+			<div class="chart-card">
+				<div class="chart-header">
+					<h3>📉 Desvalorização Anual</h3>
+					<p class="chart-desc">Identifique os anos com maior e menor queda</p>
+				</div>
+				<div class="chart-body">
+					<YearlyDropChart 
+						data={resultado.grafico_yearly_drop}
+					/>
+				</div>
+				{#if !auth.usuarioVip}
+					<div class="vip-overlay">
+						<span>🔒 Projeções para VIPs</span>
+					</div>
+				{/if}
 			</div>
 		</div>
 
-		{#if auth.usuarioVip}
-			<div class="vip-section">
-				<h2 class="section-title">📊 Previsões VIP</h2>
-				<div class="vip-grid">
-					<div class="vip-card">
-						<span class="vip-label">Previsão 2026</span>
-						<span class="vip-value">{resultado.vip_stats.previsao_2026}</span>
-					</div>
-					<div class="vip-card">
-						<span class="vip-label">Previsibilidade</span>
-						<span class="vip-value">{resultado.vip_stats.previsibilidade}</span>
-					</div>
-					<div class="vip-card">
-						<span class="vip-label">Tendência Anual</span>
-						<span class="vip-value">{resultado.vip_stats.tendencia_anual}</span>
-					</div>
-				</div>
+		<!-- Tabela de Preços -->
+		<div class="table-section">
+			<h3>📋 Histórico de Preços FIPE</h3>
+			<div class="table-wrapper">
+				<table class="data-table">
+					<thead>
+						<tr>
+							<th>Ano</th>
+							<th>Valor FIPE</th>
+							<th>Status</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each resultado.tabela as row}
+							<tr>
+								<td>{row.ano}</td>
+								<td class:locked={row.valor.includes('🔒')}>{row.valor}</td>
+								<td>
+									{#if row.valor.includes('🔒')}
+										<span class="badge locked">VIP</span>
+									{:else}
+										<span class="badge available">✓</span>
+									{/if}
+								</td>
+								</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		</div>
+
+		<!-- Recomendação -->
+		{#if resultado.insights?.recomendacao}
+			<div class="recommendation">
+				<span class="rec-icon">💡</span>
+				<p>{resultado.insights.recomendacao}</p>
 			</div>
 		{/if}
 	</div>
 {/if}
 
 <style>
-	.empty-state,
-	.loading,
-	.error {
+	.empty-state {
 		display: flex;
+		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		height: 50vh;
+		min-height: 60vh;
 		color: var(--neutral-content);
-		font-size: 0.9375rem;
+		text-align: center;
+	}
+
+	.empty-icon {
+		font-size: 4rem;
+		margin-bottom: 1rem;
+		opacity: 0.5;
+	}
+
+	.empty-state h2 {
+		font-size: 1.5rem;
+		margin-bottom: 0.5rem;
+		color: var(--base-content);
+	}
+
+	.loading {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		min-height: 50vh;
+		gap: 1rem;
+		color: var(--neutral-content);
+	}
+
+	.spinner {
+		width: 40px;
+		height: 40px;
+		border: 3px solid var(--base-300);
+		border-top-color: var(--accent);
+		border-radius: 50%;
+		animation: spin 1s linear infinite;
+	}
+
+	@keyframes spin {
+		to { transform: rotate(360deg); }
 	}
 
 	.error {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		min-height: 50vh;
 		color: var(--error);
+		gap: 0.5rem;
+	}
+
+	.error-icon {
+		font-size: 2rem;
 	}
 
 	.analysis {
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		gap: 1.5rem;
 	}
 
 	.vehicle-header {
 		display: flex;
-		align-items: center;
 		justify-content: space-between;
-		padding: 0.75rem 1rem;
-		background: var(--base-200);
-		border: 0.5px solid var(--base-300);
+		align-items: center;
+		padding: 1.5rem;
+		background: linear-gradient(135deg, var(--base-200), var(--base-300));
+		border-radius: 0.75rem;
+		border: 1px solid var(--base-300);
 	}
 
 	.vehicle-name {
-		font-size: 1.125rem;
+		font-size: 1.75rem;
 		font-weight: 700;
 		color: var(--base-content);
 	}
 
+	.vehicle-type {
+		font-size: 0.875rem;
+		color: var(--neutral-content);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
 	.price-summary {
 		display: flex;
-		gap: 1.5rem;
+		gap: 2rem;
 	}
 
 	.price-item {
@@ -199,78 +334,137 @@
 	}
 
 	.price-item .label {
-		font-size: 0.625rem;
+		font-size: 0.75rem;
 		text-transform: uppercase;
-		letter-spacing: 0.05em;
 		color: var(--neutral-content);
+		letter-spacing: 0.05em;
 	}
 
 	.price-item .value {
-		font-size: 0.875rem;
-		font-weight: 600;
+		font-size: 1.25rem;
+		font-weight: 700;
 		color: var(--base-content);
 	}
 
-	.main-grid {
-		display: grid;
-		grid-template-columns: 2fr 1fr;
-		gap: 0.75rem;
-		min-height: 500px;
+	.price-item.highlight .value {
+		color: var(--accent);
 	}
 
-	@media (max-width: 1024px) {
-		.main-grid {
-			grid-template-columns: 1fr;
-		}
+	.price-item.alert .value {
+		color: var(--error);
 	}
 
-	.chart-section,
-	.history-section {
-		background: var(--base-200);
-		border: 0.5px solid var(--base-300);
-		padding: 0.75rem;
+	.insights-bar {
 		display: flex;
-		flex-direction: column;
+		gap: 1rem;
+		padding: 1rem;
+		background: var(--base-200);
+		border-radius: 0.5rem;
+		border: 1px solid var(--base-300);
 	}
 
-	.section-title {
-		font-size: 0.75rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: var(--neutral-content);
-		margin-bottom: 0.5rem;
-	}
-
-	.chart-section :global(.chart-wrapper) {
+	.insight-item {
 		flex: 1;
-		min-height: 0;
+		text-align: center;
+		padding: 0.5rem;
+	}
+
+	.insight-label {
+		display: block;
+		font-size: 0.75rem;
+		color: var(--neutral-content);
+		margin-bottom: 0.25rem;
+	}
+
+	.insight-value {
+		display: block;
+		font-size: 1.25rem;
+		font-weight: 700;
+		color: var(--base-content);
+	}
+
+	.charts-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+		gap: 1.5rem;
+	}
+
+	.chart-card {
+		background: var(--base-200);
+		border-radius: 0.75rem;
+		border: 1px solid var(--base-300);
+		overflow: hidden;
+		position: relative;
+	}
+
+	.chart-header {
+		padding: 1rem;
+		border-bottom: 1px solid var(--base-300);
+	}
+
+	.chart-header h3 {
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--base-content);
+		margin-bottom: 0.25rem;
+	}
+
+	.chart-desc {
+		font-size: 0.75rem;
+		color: var(--neutral-content);
+	}
+
+	.chart-body {
+		padding: 1rem;
+	}
+
+	.vip-overlay {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		padding: 0.75rem;
+		background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+		text-align: center;
+		font-size: 0.875rem;
+		color: var(--warning);
+	}
+
+	.table-section {
+		background: var(--base-200);
+		border-radius: 0.75rem;
+		border: 1px solid var(--base-300);
+		padding: 1.5rem;
+	}
+
+	.table-section h3 {
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--base-content);
+		margin-bottom: 1rem;
 	}
 
 	.table-wrapper {
-		flex: 1;
-		overflow-y: auto;
+		overflow-x: auto;
 	}
 
 	.data-table {
 		width: 100%;
 		border-collapse: collapse;
-		font-size: 0.8125rem;
+		font-size: 0.875rem;
 	}
 
 	.data-table th,
 	.data-table td {
-		padding: 0.5rem 0.625rem;
+		padding: 0.75rem;
 		text-align: left;
-		border-bottom: 0.5px solid var(--base-300);
+		border-bottom: 1px solid var(--base-300);
 	}
 
 	.data-table th {
 		font-weight: 600;
 		color: var(--neutral-content);
 		background: var(--base-100);
-		position: sticky;
-		top: 0;
 	}
 
 	.data-table td {
@@ -282,41 +476,63 @@
 		font-style: italic;
 	}
 
-	.vip-section {
-		background: oklch(from var(--warning) l c h / 0.05);
-		border: 0.5px solid oklch(from var(--warning) l c h / 0.2);
-		padding: 0.75rem;
+	.badge {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.25rem 0.5rem;
+		border-radius: 0.25rem;
+		font-size: 0.75rem;
+		font-weight: 600;
 	}
 
-	.vip-grid {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
+	.badge.locked {
+		background: var(--warning);
+		color: #000;
+	}
+
+	.badge.available {
+		background: var(--success);
+		color: #fff;
+	}
+
+	.recommendation {
+		display: flex;
+		align-items: center;
 		gap: 0.75rem;
+		padding: 1rem 1.5rem;
+		background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1));
+		border: 1px solid rgba(59, 130, 246, 0.3);
+		border-radius: 0.75rem;
+	}
+
+	.rec-icon {
+		font-size: 1.5rem;
+	}
+
+	.recommendation p {
+		margin: 0;
+		color: var(--base-content);
+		font-size: 0.9375rem;
 	}
 
 	@media (max-width: 768px) {
-		.vip-grid {
+		.vehicle-header {
+			flex-direction: column;
+			gap: 1rem;
+			align-items: flex-start;
+		}
+
+		.price-summary {
+			width: 100%;
+			justify-content: space-between;
+		}
+
+		.insights-bar {
+			flex-direction: column;
+		}
+
+		.charts-grid {
 			grid-template-columns: 1fr;
 		}
-	}
-
-	.vip-card {
-		display: flex;
-		flex-direction: column;
-		padding: 0.625rem;
-		background: var(--base-100);
-	}
-
-	.vip-label {
-		font-size: 0.625rem;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: var(--neutral-content);
-	}
-
-	.vip-value {
-		font-size: 0.9375rem;
-		font-weight: 600;
-		color: var(--base-content);
 	}
 </style>

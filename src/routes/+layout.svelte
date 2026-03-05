@@ -12,6 +12,7 @@
 
 <svelte:head>
 	<title>MotoExpert AI | Consultoria</title>
+	<script src="https://accounts.google.com/gsi/client" async defer></script>
 	<meta
 		name="description"
 		content="MotoExpert AI — Análise de desvalorização FIPE para motos no Brasil."
