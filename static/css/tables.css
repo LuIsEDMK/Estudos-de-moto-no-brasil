@@ -49,5 +49,9 @@
 }
 
 .dark .data-table tbody tr:hover {
-    background: rgba(51, 65, 85, 0.3);
+    background: rgba(51, 65, 85, 0.5);
+}
+
+.dark .data-table tbody tr:hover td {
+    color: #ffffff;
 }

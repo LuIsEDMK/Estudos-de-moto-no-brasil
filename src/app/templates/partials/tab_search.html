@@ -2,13 +2,13 @@
 <div x-show="abaAtiva === 'pesquisa'" class="p-6" x-cloak>
 
     <!-- Paywall: Limit reached -->
-    <div x-show="consultasFeitas >= 6 && !usuarioVip" x-cloak class="flex flex-col gap-4">
+    <div x-show="limiteAtingido && !usuarioVip" x-cloak class="flex flex-col gap-4">
         <div class="alert alert-danger">
-            <p class="font-bold">⚠️ Limite gratuito atingido (6 / 6)</p>
+            <p class="font-bold">⚠️ Limite gratuito atingido (2 / 2)</p>
         </div>
         <div class="panel p-6">
-            <h3 class="text-lg font-bold mb-2" style="color: rgb(var(--color-content));">🛑 Não compre sua moto no
-                escuro!</h3>
+            <h3 class="text-lg font-bold mb-2" style="color: rgb(var(--color-content));">🛑 Não compre seu <span
+                    x-text="tipoVeiculo === 'MOTORCYCLE' ? 'moto' : 'veículo'"></span> no escuro!</h3>
             <p class="text-sm mb-4" style="color: rgb(var(--color-content-muted));">
                 Por apenas <strong style="color: rgb(var(--color-content));">R$ 9,90</strong> você desbloqueia:
             </p>
@@ -18,7 +18,7 @@
                 <li class="flex items-center gap-2"><span class="text-emerald-500" aria-hidden="true">✅</span> Preços e
                     desvalorizações dos anos mais recentes</li>
                 <li class="flex items-center gap-2"><span class="text-emerald-500" aria-hidden="true">✅</span> Ranking
-                    VIP das melhores motos do Brasil</li>
+                    VIP dos melhores veículos do Brasil</li>
             </ul>
             <a href="https://www.mercadopago.com.br" target="_blank" rel="noopener"
                 class="btn-cta bg-orange-600 hover:bg-orange-700 text-white">
@@ -38,9 +38,24 @@
     </div>
 
     <!-- Results -->
-    <div x-show="resultado && !(consultasFeitas >= 6 && !usuarioVip)" x-cloak>
+    <div x-show="resultado && !(limiteAtingido && !usuarioVip)" x-cloak>
         <h2 class="text-xl font-bold mb-5" style="color: rgb(var(--color-content));"
             x-text="'Análise: ' + resultado.marca + ' ' + resultado.modelo"></h2>
+
+        <!-- Banner de Valorização -->
+        <div x-show="resultado && resultado.valorizou" class="mb-5 p-4 rounded-xl flex items-start gap-3"
+            style="background: linear-gradient(135deg, rgba(0,128,0,0.12), rgba(0,180,0,0.07)); border: 1.5px solid rgba(0,180,0,0.35);"
+            x-cloak>
+            <span class="text-2xl flex-shrink-0">🚀</span>
+            <div>
+                <p class="font-bold text-sm" style="color: #008000;">Este veículo está se valorizando!</p>
+                <p class="text-xs mt-0.5" style="color: rgb(var(--color-content-muted));">
+                    Raro no mercado: esse modelo apresentou <strong>valorização histórica</strong>. O preço mais novo é
+                    maior do que o mais antigo — quem comprou esse veículo há alguns anos <strong
+                        style="color:#008000;">ganhou dinheiro</strong> em vez de perder.
+                </p>
+            </div>
+        </div>
 
         <!-- Stat cards -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -60,18 +75,20 @@
             <div class="stat-card">
                 <p class="text-xs font-semibold uppercase tracking-wider mb-1"
                     style="color: rgb(var(--color-content-muted));">
-                    Desvalorização Histórica</p>
-                <p class="text-xl font-bold font-mono text-red-600 dark:text-red-400" x-text="resultado.desvalorizacao">
+                    Impacto Histórico</p>
+                <p class="text-xl font-bold font-mono"
+                    :class="resultado && resultado.valorizou ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'"
+                    x-text="resultado.desvalorizacao">
                 </p>
             </div>
         </div>
 
         <!-- VIP Insights (Regression Model) -->
-        <div x-show="usuarioVip && resultado.vip_stats"
+        <div x-show="usuarioVip && resultado && resultado.vip_stats"
             class="panel p-4 mb-6 border-l-4 border-amber-500 bg-amber-50/50 dark:bg-amber-900/10" x-cloak>
             <h3 class="text-sm font-bold uppercase tracking-wider mb-3 flex items-center gap-2"
                 style="color: rgb(var(--color-content));">
-                <span class="text-lg">🤖</span> Insights Preditivos (IA MotoExpert)
+                <span class="text-lg">🤖</span> Insights Preditivos (IA Expert)
             </h3>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
@@ -111,7 +128,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <template x-for="item in resultado.tabela" :key="item.ano">
+                            <template x-for="(item, idx) in (resultado && resultado.tabela ? resultado.tabela : [])"
+                                :key="idx">
                                 <tr>
                                     <td x-text="item.ano"></td>
                                     <td x-text="item.valor"></td>
@@ -128,7 +146,7 @@
                 <h3 class="text-xs font-bold uppercase tracking-wider mb-3"
                     style="color: rgb(var(--color-content-muted));">Impacto
                     Financeiro por Ano</h3>
-                <div id="grafico-desvalorizacao" class="w-full h-72 rounded-lg overflow-hidden"></div>
+                <div id="grafico-desvalorizacao" class="w-full rounded-lg overflow-hidden" style="height: 360px;"></div>
             </div>
         </div>
     </div>

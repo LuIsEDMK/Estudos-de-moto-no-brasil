@@ -42,11 +42,21 @@
                     :class="abaAtiva === 'comparador' ? 'tab-btn active-compare' : 'tab-btn'">
                     ⚔️ Tira-Teima
                 </button>
+                <button id="tab-tutorial" @click="abaAtiva = 'tutorial'"
+                    :class="abaAtiva === 'tutorial' ? 'tab-btn active-search' : 'tab-btn'">
+                    📖 Como Usar
+                </button>
+                <button id="tab-assinar" @click="abaAtiva = 'assinar'"
+                    :class="abaAtiva === 'assinar' ? 'tab-btn active-vip' : 'tab-btn'">
+                    🛒 Assinar VIP
+                </button>
             </div>
 
             {% include "partials/tab_search.html" %}
             {% include "partials/tab_vip.html" %}
             {% include "partials/tab_compare.html" %}
+            {% include "partials/tab_tutorial.html" %}
+            {% include "partials/tab_pricing.html" %}
         </div>
     </main>
 
@@ -55,20 +65,33 @@
 
 {% block extra_scripts %}
 <script>
+    window.handleCredentialResponse = async (response) => {
+        const app = Alpine.$data(document.querySelector('[x-data]'));
+        app.loginGoogle(response.credential);
+    };
+
     function appData() {
         const cfg = JSON.parse(document.getElementById('app-config').textContent);
 
         return {
-            usuarioVip: cfg.usuarioVip,
+            usuarioVip: cfg.usuarioVip || sessionStorage.getItem('motoexpert_vip') === '1',
             consultasFeitas: cfg.consultasFeitas,
             restantes: cfg.restantes,
+            limiteAtingido: false,
             senha: '',
-            abaAtiva: 'pesquisa',
+            tipoVeiculo: 'MOTORCYCLE',
+            marcasDisponiveis: [],
+            abaAtiva: (cfg.usuarioVip || sessionStorage.getItem('motoexpert_vip') === '1') ? 'pesquisa' : 'tutorial',
             marcaSelecionada: '',
             modeloSelecionado: '',
             modelosDisponiveis: [],
             resultado: null,
             degustacao: [],
+            vipRelatorios: null,
+            vipMotoSelecionada: null,
+            vipGraficoLoading: false,
+            vipGraficoData: null,
+            loginStatus: null, // null | 'vip' | 'sem_vip' | 'erro'
             comparar: {
                 motoA: { marca: '', modelo: '' },
                 motoB: { marca: '', modelo: '' }
@@ -76,25 +99,72 @@
             modelosComparacao: { A: [], B: [] },
             comparacaoResultado: null,
 
-            async login() {
+            async loginGoogle(credential) {
                 const formData = new FormData();
-                formData.append('senha', this.senha);
+                formData.append('credential', credential);
                 const res = await fetch('/api/login', { method: 'POST', body: formData });
                 const data = await res.json();
                 if (data.vip) {
-                    this.usuarioVip = true;
-                    this.carregarRelatoriosVip();
+                    sessionStorage.setItem('motoexpert_vip', '1');
+                    window.location.reload();
+                } else if (data.google_ok) {
+                    sessionStorage.removeItem('motoexpert_vip');
+                    this.loginStatus = 'sem_vip';
                 } else {
-                    alert('Código inválido');
+                    this.loginStatus = 'erro';
                 }
             },
 
-            async carregarModelos() {
-                if (!this.marcaSelecionada) return;
-                const res = await fetch(`/api/modelos/${encodeURIComponent(this.marcaSelecionada)}`);
-                const data = await res.json();
-                this.modelosDisponiveis = data.modelos;
+            async logout() {
+                sessionStorage.removeItem('motoexpert_vip');
+                document.cookie = 'vip_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                document.cookie = 'session_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
+                try {
+                    await fetch('/api/logout', { method: 'POST' });
+                } catch (e) { }
+
+                window.location.reload();
+            },
+
+            async mudarCategoria(tipo) {
+                this.tipoVeiculo = tipo;
+                this.marcaSelecionada = '';
                 this.modeloSelecionado = '';
+                this.modelosDisponiveis = [];
+                this.resultado = null;
+                this.comparar = {
+                    motoA: { marca: '', modelo: '' },
+                    motoB: { marca: '', modelo: '' }
+                };
+                this.modelosComparacao = { A: [], B: [] };
+                this.comparacaoResultado = null;
+                await this.carregarMarcas();
+                await this.carregarRelatoriosVip();
+            },
+
+            async carregarMarcas() {
+                const res = await fetch(`/api/marcas/${this.tipoVeiculo}`);
+                const data = await res.json();
+                this.marcasDisponiveis = data.marcas;
+            },
+
+            async carregarModelos(evento) {
+                const marca = evento?.target?.value || this.marcaSelecionada;
+                this.marcaSelecionada = marca;
+
+                this.modelosDisponiveis = [];
+                this.modeloSelecionado = '';
+
+                if (!marca) return;
+
+                try {
+                    const res = await fetch(`/api/modelos/${this.tipoVeiculo}/${encodeURIComponent(marca)}`);
+                    const data = await res.json();
+                    this.modelosDisponiveis = data.modelos || [];
+                } catch (e) {
+                    console.error("Erro carregando modelos:", e);
+                }
             },
 
             async analisar() {
@@ -102,54 +172,222 @@
                     alert('Selecione uma marca e modelo!');
                     return;
                 }
+
+                this.abaAtiva = 'pesquisa'; // Muda de aba imediatamente para feedback visual
+
                 const formData = new FormData();
                 formData.append('marca', this.marcaSelecionada);
                 formData.append('modelo', this.modeloSelecionado);
+                formData.append('tipo', this.tipoVeiculo);
 
                 const res = await fetch('/api/analyze', { method: 'POST', body: formData });
-                if (res.status === 403) { this.consultasFeitas = 6; return; }
+
+                if (res.status === 403) {
+                    this.consultasFeitas = 2;
+                    this.restantes = 0;
+                    this.limiteAtingido = true;
+                    return;
+                }
+
                 if (!res.ok) { alert('Erro ao analisar. Tente novamente.'); return; }
 
                 this.resultado = await res.json();
                 this.consultasFeitas++;
-                this.restantes = Math.max(0, 6 - this.consultasFeitas);
+                this.restantes = Math.max(0, 2 - this.consultasFeitas);
 
                 this.$nextTick(() => {
                     const g = this.resultado.grafico;
-                    const trace = {
+                    const isDark = document.documentElement.classList.contains('dark');
+                    const textColor = isDark ? '#cbd5e1' : '#1e293b'; // Increased contrast for light mode
+                    const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+
+                    // --- Legend traces (fake traces just for legend display) ---
+                    const legendTraces = [
+                        { x: [null], y: [null], type: 'bar', name: '🟢 Lucro / Valorização', marker: { color: '#008000' }, showlegend: true },
+                        { x: [null], y: [null], type: 'bar', name: '🟡 Desvalorização normal (até 8%)', marker: { color: '#FFB347' }, showlegend: true },
+                        { x: [null], y: [null], type: 'bar', name: '🔴 Desvalorização Alta (8% a 15%)', marker: { color: '#E50000' }, showlegend: true },
+                        { x: [null], y: [null], type: 'bar', name: '🟤 Desvalorização abusiva (>15%)', marker: { color: '#8B0000' }, showlegend: true },
+                        { x: [null], y: [null], type: 'bar', name: '⬛ VIP — Bloqueado', marker: { color: '#D3D3D3' }, showlegend: true },
+                    ];
+
+                    const textColorsDynamic = g.cores.map(c =>
+                        (c === '#FFB347' || c === '#D3D3D3') ? '#1e293b' : '#ffffff'
+                    );
+
+                    // --- Main bar trace ---
+                    const mainTrace = {
                         x: g.periodos,
                         y: g.valores,
                         type: 'bar',
-                        marker: { color: g.cores },
+                        name: 'Impacto',
+                        showlegend: false,
+                        marker: {
+                            color: g.cores,
+                            line: { color: g.cores.map(c => c + 'CC'), width: 1 },
+                            opacity: 0.92
+                        },
                         text: g.textos,
-                        textposition: 'outside',
-                        hovertemplate: '<b>Período:</b> %{x}<br><b>%{customdata}</b><extra></extra>',
-                        customdata: g.hovers
+                        textposition: 'inside',
+                        insidetextanchor: 'middle',
+                        textfont: { size: 11, color: textColorsDynamic, family: 'Inter, sans-serif' },
+                        hovertemplate: '<b>%{x}</b><br>%{customdata}<extra></extra>',
+                        customdata: g.hovers,
+                        cliponaxis: false
                     };
+
                     const layout = {
-                        xaxis: { title: 'Passagem dos Anos', type: 'category' },
-                        yaxis: { title: 'Impacto Financeiro (R$)' },
-                        margin: { l: 20, r: 20, t: 30, b: 20 },
+                        xaxis: {
+                            title: { text: 'Passagem dos Anos', font: { color: textColor, size: 11 } },
+                            type: 'category',
+                            tickfont: { color: textColor, size: 10 },
+                            gridcolor: gridColor,
+                            linecolor: gridColor
+                        },
+                        yaxis: {
+                            title: { text: 'Impacto Financeiro (R$)', font: { color: textColor, size: 11 } },
+                            tickfont: { color: textColor, size: 10 },
+                            gridcolor: gridColor,
+                            zeroline: true,
+                            zerolinecolor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+                            zerolinewidth: 1.5
+                        },
+                        legend: {
+                            orientation: 'h',
+                            x: 0, y: -0.28,
+                            font: { size: 10, color: textColor, family: 'Inter, sans-serif' },
+                            bgcolor: 'transparent',
+                            traceorder: 'normal'
+                        },
+                        margin: { l: 55, r: 15, t: 20, b: 90 },
                         paper_bgcolor: 'transparent',
                         plot_bgcolor: 'transparent',
-                        font: { family: 'Inter' },
-                        showlegend: false
+                        font: { family: 'Inter, sans-serif', color: textColor },
+                        showlegend: true,
+                        bargap: 0.28,
+                        hoverlabel: {
+                            bgcolor: isDark ? '#1e293b' : '#ffffff',
+                            bordercolor: isDark ? '#334155' : '#e2e8f0',
+                            font: { family: 'Inter, sans-serif', size: 12, color: isDark ? '#f1f5f9' : '#1e293b' }
+                        }
                     };
-                    Plotly.newPlot('grafico-desvalorizacao', [trace], layout, { responsive: true });
+
+                    const isSingleBar = g.periodos.length === 1;
+                    const isProfit = isSingleBar && g.valores.length > 0 && g.valores[0] > 0;
+
+                    Plotly.newPlot(
+                        'grafico-desvalorizacao',
+                        [...legendTraces, mainTrace],
+                        {
+                            ...layout,
+                            bargap: isSingleBar ? 0.72 : 0.28,
+                            margin: isSingleBar
+                                ? { l: 55, r: 15, t: isProfit ? 80 : 20, b: isProfit ? 30 : 120 }
+                                : { l: 55, r: 15, t: 20, b: 90 }
+                        },
+                        {
+                            responsive: true,
+                            displayModeBar: true,
+                            displaylogo: false,
+                            modeBarButtonsToRemove: ['lasso2d', 'select2d', 'hoverClosestCartesian', 'hoverCompareCartesian'],
+                            scrollZoom: false,
+                            toImageButtonOptions: { format: 'png', filename: 'analise_motoexpert' }
+                        }
+                    );
                 });
             },
 
             async carregarRelatoriosVip() {
-                const res = await fetch('/api/vip/reports');
+                const res = await fetch(`/api/vip/reports?tipo=${this.tipoVeiculo}`);
                 const data = await res.json();
                 if (!data.vip) {
                     this.degustacao = data.degustacao;
                 } else {
+                    this.vipRelatorios = {
+                        recentes: data.recentes,
+                        baratas: data.baratas,
+                        bombas: data.bombas,
+                    };
+                }
+            },
+
+            async selecionarMotoVip(marca, modelo) {
+                // Toggle off if same moto clicked again
+                if (this.vipMotoSelecionada &&
+                    this.vipMotoSelecionada.marca === marca &&
+                    this.vipMotoSelecionada.modelo === modelo) {
+                    this.vipMotoSelecionada = null;
+                    this.vipGraficoData = null;
+                    return;
+                }
+
+                this.vipMotoSelecionada = { marca, modelo };
+                this.vipGraficoLoading = true;
+                this.vipGraficoData = null;
+
+                try {
+                    const fd = new FormData();
+                    fd.append('marca', marca);
+                    fd.append('modelo', modelo);
+                    fd.append('tipo', this.tipoVeiculo);
+                    const res = await fetch('/api/analyze', { method: 'POST', body: fd });
+                    if (!res.ok) throw new Error('API error');
+                    const data = await res.json();
+                    this.vipGraficoData = data;
+                    this.vipGraficoLoading = false;
+
                     this.$nextTick(() => {
-                        this.renderTabela('tabela-recentes', data.recentes, ['Marca', 'Modelo', 'Ano', 'Preço', 'Perda/Ano']);
-                        this.renderTabela('tabela-baratas', data.baratas, ['Marca', 'Modelo', 'Preço Máx.', 'Perda/Ano']);
-                        this.renderTabela('tabela-bombas', data.bombas, ['Marca', 'Modelo', 'Ano Ref.', 'Preço Atual', 'Derretimento']);
+                        const g = data.grafico;
+                        if (!g || !g.periodos) return;
+                        const isDark = document.documentElement.classList.contains('dark');
+                        const textColor = isDark ? '#cbd5e1' : '#475569';
+                        const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+                        Plotly.newPlot('grafico-vip-detalhe', [{
+                            x: g.periodos,
+                            y: g.valores,
+                            type: 'bar',
+                            name: modelo,
+                            showlegend: false,
+                            marker: {
+                                color: g.cores,
+                                opacity: 0.9
+                            },
+                            text: g.textos,
+                            textposition: 'inside',
+                            insidetextanchor: 'middle',
+                            textfont: { size: 11, color: '#ffffff', family: 'Inter, sans-serif' },
+                            hovertemplate: '<b>%{x}</b><br>%{customdata}<extra></extra>',
+                            customdata: g.hovers,
+                        }], {
+                            xaxis: { type: 'category', tickfont: { color: textColor, size: 9 }, gridcolor: gridColor, linecolor: gridColor },
+                            yaxis: { tickfont: { color: textColor, size: 9 }, gridcolor: gridColor, zeroline: true, zerolinecolor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)', zerolinewidth: 1.5 },
+                            margin: {
+                                l: 50, r: 30,
+                                t: (g.periodos.length === 1 && g.valores[0] > 0) ? 80 : 15,
+                                b: (g.periodos.length === 1 && g.valores[0] > 0) ? 30 : (g.periodos.length === 1 ? 90 : 60)
+                            },
+                            paper_bgcolor: 'transparent',
+                            plot_bgcolor: 'transparent',
+                            font: { family: 'Inter, sans-serif', color: textColor },
+                            bargap: g.periodos.length === 1 ? 0.72 : 0.25,
+                            hoverlabel: {
+                                bgcolor: isDark ? '#1e293b' : '#fff',
+                                bordercolor: isDark ? '#334155' : '#e2e8f0',
+                                font: { family: 'Inter, sans-serif', size: 12, color: isDark ? '#f1f5f9' : '#1e293b' },
+                                namelength: 0,
+                                align: 'left'
+                            }
+                        }, {
+                            responsive: true,
+                            displayModeBar: true,
+                            displaylogo: false,
+                            modeBarButtonsToRemove: ['lasso2d', 'select2d', 'hoverClosestCartesian', 'hoverCompareCartesian'],
+                            scrollZoom: false,
+                            toImageButtonOptions: { format: 'png', filename: 'historico_vip_motoexpert' }
+                        });
                     });
+                } catch (e) {
+                    this.vipGraficoLoading = false;
+                    this.vipMotoSelecionada = null;
                 }
             },
 
@@ -171,15 +409,25 @@
                 el.innerHTML = html;
             },
 
-            carregarModelosComparacao(lado) {
-                const marca = lado === 'A' ? this.comparar.motoA.marca : this.comparar.motoB.marca;
+            carregarModelosComparacao(lado, evento) {
+                const marca = evento?.target?.value || (lado === 'A' ? this.comparar.motoA.marca : this.comparar.motoB.marca);
+
+                if (lado === 'A') {
+                    this.comparar.motoA.marca = marca;
+                    this.modelosComparacao.A = [];
+                    this.comparar.motoA.modelo = '';
+                } else {
+                    this.comparar.motoB.marca = marca;
+                    this.modelosComparacao.B = [];
+                    this.comparar.motoB.modelo = '';
+                }
+
                 if (!marca) return;
-                fetch(`/api/modelos/${encodeURIComponent(marca)}`)
+
+                fetch(`/api/modelos/${this.tipoVeiculo}/${encodeURIComponent(marca)}`)
                     .then(r => r.json())
                     .then(data => {
-                        this.modelosComparacao[lado] = data.modelos;
-                        if (lado === 'A') this.comparar.motoA.modelo = '';
-                        else this.comparar.motoB.modelo = '';
+                        this.modelosComparacao[lado] = data.modelos || [];
                     });
             },
 
@@ -194,6 +442,7 @@
                 formData.append('modelo_a', this.comparar.motoA.modelo);
                 formData.append('marca_b', this.comparar.motoB.marca);
                 formData.append('modelo_b', this.comparar.motoB.modelo);
+                formData.append('tipo', this.tipoVeiculo);
 
                 const res = await fetch('/api/compare', { method: 'POST', body: formData });
                 if (res.status === 403) { alert('Comparador exclusivo para VIP!'); return; }
@@ -202,34 +451,86 @@
                 this.comparacaoResultado = await res.json();
                 this.$nextTick(() => {
                     const g = this.comparacaoResultado.grafico;
+                    const isDark = document.documentElement.classList.contains('dark');
+                    const textColor = isDark ? '#cbd5e1' : '#1e293b'; // Increased contrast for light mode
+                    const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+
+                    const colorA = '#3b82f6'; // azul
+                    const colorB = '#f97316'; // laranja
+
                     const traceA = {
                         x: g.moto_a.dados.map(d => d[0]),
                         y: g.moto_a.dados.map(d => d[1]),
                         mode: 'lines+markers',
                         name: g.moto_a.nome,
-                        type: 'scatter'
+                        type: 'scatter',
+                        fill: 'tozeroy',
+                        fillcolor: colorA + '22',
+                        line: { color: colorA, width: 2.5, shape: 'spline' },
+                        marker: { color: colorA, size: 7, line: { color: '#fff', width: 1.5 } },
+                        hovertemplate: '<b>' + g.moto_a.nome + '</b><br>Ano: %{x}<br>Preço: R$ %{y:,.0f}<extra></extra>'
                     };
                     const traceB = {
                         x: g.moto_b.dados.map(d => d[0]),
                         y: g.moto_b.dados.map(d => d[1]),
                         mode: 'lines+markers',
                         name: g.moto_b.nome,
-                        type: 'scatter'
+                        type: 'scatter',
+                        fill: 'tozeroy',
+                        fillcolor: colorB + '22',
+                        line: { color: colorB, width: 2.5, shape: 'spline' },
+                        marker: { color: colorB, size: 7, line: { color: '#fff', width: 1.5 } },
+                        hovertemplate: '<b>' + g.moto_b.nome + '</b><br>Ano: %{x}<br>Preço: R$ %{y:,.0f}<extra></extra>'
                     };
                     const layout = {
-                        title: `Evolução de Preço: ${g.moto_a.nome} vs ${g.moto_b.nome}`,
-                        xaxis: { title: 'Ano' },
-                        yaxis: { title: 'Preço FIPE (R$)' },
+                        xaxis: {
+                            title: { text: 'Ano do Modelo', font: { color: textColor, size: 11 } },
+                            tickfont: { color: textColor },
+                            gridcolor: gridColor,
+                            linecolor: gridColor
+                        },
+                        yaxis: {
+                            title: { text: 'Preço FIPE (R$)', font: { color: textColor, size: 11 } },
+                            tickfont: { color: textColor },
+                            tickformat: ',.0f',
+                            tickprefix: 'R$ ',
+                            gridcolor: gridColor
+                        },
+                        legend: {
+                            orientation: 'h',
+                            x: 0, y: -0.22,
+                            font: { size: 11, color: textColor, family: 'Inter, sans-serif' },
+                            bgcolor: 'transparent'
+                        },
+                        margin: { l: 75, r: 15, t: 20, b: 80 },
                         paper_bgcolor: 'transparent',
                         plot_bgcolor: 'transparent',
-                        font: { family: 'Inter' },
-                        legend: { orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }
+                        font: { family: 'Inter, sans-serif', color: textColor },
+                        hovermode: 'x unified',
+                        hoverlabel: {
+                            bgcolor: isDark ? '#1e293b' : '#ffffff',
+                            bordercolor: isDark ? '#334155' : '#e2e8f0',
+                            font: { family: 'Inter, sans-serif', size: 12, color: isDark ? '#f1f5f9' : '#1e293b' }
+                        }
                     };
-                    Plotly.newPlot('grafico-comparacao', [traceA, traceB], layout, { responsive: true });
+                    Plotly.newPlot(
+                        'grafico-comparacao',
+                        [traceA, traceB],
+                        layout,
+                        {
+                            responsive: true,
+                            displayModeBar: true,
+                            displaylogo: false,
+                            modeBarButtonsToRemove: ['lasso2d', 'select2d', 'hoverClosestCartesian', 'hoverCompareCartesian'],
+                            scrollZoom: false,
+                            toImageButtonOptions: { format: 'png', filename: 'tirateima_motoexpert' }
+                        }
+                    );
                 });
             },
 
             init() {
+                this.carregarMarcas();
                 this.carregarRelatoriosVip();
             }
         }

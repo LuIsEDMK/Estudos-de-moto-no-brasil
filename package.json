@@ -4,8 +4,8 @@
 	"private": true,
 	"scripts": {
 		"deploy": "uv run pywrangler deploy",
-		"dev": "uv run pywrangler dev",
-		"start": "uv run pywrangler dev"
+		"dev": "uv run pywrangler dev --ip 127.0.0.1",
+		"start": "uv run pywrangler dev --ip 127.0.0.1"
 	},
 	"devDependencies": {
 		"wrangler": "^4.69.0"

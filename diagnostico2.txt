@@ -1,0 +1,113 @@
+
+======================================================================
+  DIAGNÓSTICO DE OVERFITTING — REGRESSÃO POLINOMIAL GRAU 2
+======================================================================
+
+======================================================================
+  BASE: MOTOS  →  base_motos_VIP_mestre.csv
+======================================================================
+
+  📊 Total analisado: 39 modelos | ⚠️  Com alertas: 34
+
+  🚨 MODELOS COM PROBLEMA DETECTADO:
+  Marca                Modelo                                n  R²-train  R²-LOOCV    Gap       Prev2026 Alertas
+  ----------------------------------------------------------------------------------------------------------------------------------
+  AGRALE               SXT 27.5 E 190cc                      6     0.788     0.062  0.726 R$      17,392   ⚠️  Gap R²-treino vs LOOCV = 0.73 (overfit detectado) | ⚠️  Previsão 2026 absurda: R$17,392 (curva explodindo)
+  ATALA                SKEGIA 50cc                           4     0.902     0.375  0.527 R$       5,367   ⚠️  Gap R²-treino vs LOOCV = 0.53 (overfit detectado)
+  ATALA                CALIFFONE 50cc                        4     0.917     0.461  0.455 R$       4,647   ⚠️  Gap R²-treino vs LOOCV = 0.46 (overfit detectado) | ⚠️  Previsão 2026 absurda: R$4,647 (curva explodindo)
+  AMAZONAS             AME-250 C1                            4     0.920     0.474  0.446 R$      21,566   ⚠️  Gap R²-treino vs LOOCV = 0.45 (overfit detectado)
+  ADLY                 JAGUAR JT 50                          6     0.823     0.495  0.328 R$       5,338   ⚠️  Gap R²-treino vs LOOCV = 0.33 (overfit detectado)
+  AGRALE               SXT 27.5 EX 190cc                     7     0.877     0.652  0.225 R$      26,942   ⚠️  Gap R²-treino vs LOOCV = 0.23 (overfit detectado) | ⚠️  Previsão 2026 absurda: R$26,942 (curva explodindo)
+  APRILIA              SR RACING 50cc                        4     0.975     0.834  0.140 R$      30,109   ⚠️  Previsão 2026 absurda: R$30,109 (curva explodindo)
+  APRILIA              RALLY 50cc                            4     0.967     0.854  0.113 R$      11,307   ⚠️  Previsão 2026 absurda: R$11,307 (curva explodindo)
+  APRILIA              SR WWW 50cc                           4     0.968     0.859  0.109 R$      11,264   ⚠️  Previsão 2026 absurda: R$11,264 (curva explodindo)
+  APRILIA              RS 50cc                               4     0.963     0.876  0.087 R$      18,435   ⚠️  Previsão 2026 absurda: R$18,435 (curva explodindo)
+  ATALA                MASTER 50cc                           4     0.980     0.894  0.086 R$       5,478   ⚠️  Previsão 2026 absurda: R$5,478 (curva explodindo)
+  AGRALE               DAKAR 50                              4     0.981     0.897  0.085 R$       6,792   ⚠️  R² alto com poucos pontos (suspeito de overfit) | ⚠️  Previsão 2026 absurda: R$6,792 (curva explodindo)
+  AGRALE               TCHAU 50                              8     0.916     0.840  0.076 R$       8,355   ⚠️  Previsão 2026 absurda: R$8,355 (curva explodindo)
+  AGRALE               FORCE 50                              4     0.984     0.911  0.073 R$       5,425   ⚠️  R² alto com poucos pontos (suspeito de overfit)
+  ADLY                 JAGUAR JT 100                         4     0.981     0.919  0.062 R$       5,639   ⚠️  R² alto com poucos pontos (suspeito de overfit) | ⚠️  Previsão 2026 absurda: R$5,639 (curva explodindo)
+  AGRALE               SST 13.5 125cc                        9     0.937     0.881  0.056 R$      10,054   ⚠️  Previsão 2026 absurda: R$10,054 (curva explodindo)
+  AMAZONAS             AME-150 TC/ SC                        4     0.991     0.944  0.047 R$       7,357   ⚠️  R² alto com poucos pontos (suspeito de overfit)
+  AMAZONAS             AME-110 MIX                           4     0.992     0.958  0.034 R$       5,258   ⚠️  R² alto com poucos pontos (suspeito de overfit)
+  AGRALE               ELEFANTRE 30.0 ES 190cc               9     0.924     0.890  0.033 R$      26,540   ⚠️  Previsão 2026 absurda: R$26,540 (curva explodindo)
+  AMAZONAS             AME-LX 125/26                         4     0.997     0.982  0.015 R$       7,100   ⚠️  R² alto com poucos pontos (suspeito de overfit)
+
+  📈 R² médio (treino): 0.925
+  📉 Gap médio (overfitting): 0.143
+  📉 Gap máximo: 0.726
+
+======================================================================
+  BASE: CARROS  →  base_carros_VIP_mestre.csv
+======================================================================
+
+  📊 Total analisado: 31 modelos | ⚠️  Com alertas: 15
+
+  🚨 MODELOS COM PROBLEMA DETECTADO:
+  Marca                Modelo                                n  R²-train  R²-LOOCV    Gap       Prev2026 Alertas
+  ----------------------------------------------------------------------------------------------------------------------------------
+  Agrale               MARRUÁ 2.8 12V 132cv TDI Diesel       4     0.782    -0.301  1.083 R$     115,659   ⚠️  Gap R²-treino vs LOOCV = 1.08 (overfit detectado)
+  ASTON MARTIN         DB12 Coupe 4.0 V8 680cv               4     0.778     0.235  0.543 R$   3,378,925   ⚠️  Gap R²-treino vs LOOCV = 0.54 (overfit detectado)
+  Alfa Romeo           145 Elegant 1.7/1.8 16V               4     0.934     0.597  0.337 R$     160,542   ⚠️  Gap R²-treino vs LOOCV = 0.34 (overfit detectado) | ⚠️  Previsão 2026 absurda: R$160,542 (curva explodindo)
+  ASTON MARTIN         Vantage Coupe 4.7 V8 425cv            4     0.911     0.590  0.322 R$     985,249   ⚠️  Gap R²-treino vs LOOCV = 0.32 (overfit detectado)
+  Alfa Romeo           145 Elegant 2.0 16V                   4     0.925     0.653  0.272 R$      85,370   ⚠️  Gap R²-treino vs LOOCV = 0.27 (overfit detectado) | ⚠️  Previsão 2026 absurda: R$85,370 (curva explodindo)
+  Alfa Romeo           145 Quadrifoglio 2.0                  4     0.881     0.649  0.232 R$      98,601   ⚠️  Gap R²-treino vs LOOCV = 0.23 (overfit detectado) | ⚠️  Previsão 2026 absurda: R$98,601 (curva explodindo)
+  Agrale               MARRUÁ AM 250 3.8 CS TDI Diesel (E6)   5     0.493     0.321  0.172 R$     489,268   ⚠️  Gap R²-treino vs LOOCV = 0.17 (overfit detectado)
+  Acura                Legend 3.2/3.5                        8     0.918     0.848  0.070 R$     135,244   ⚠️  Previsão 2026 absurda: R$135,244 (curva explodindo)
+  AM Gen               Hummer Hard-Top 6.5 4x4 Diesel TB     3     0.997       N/A    N/A R$   1,621,154   ⚠️  R² alto com poucos pontos (suspeito de overfit) | ⚠️  Previsão 2026 absurda: R$1,621,154 (curva explodindo)
+  AM Gen               Hummer Open-Top 6.5 4x4 Diesel TB     3     0.998       N/A    N/A R$   1,647,414   ⚠️  R² alto com poucos pontos (suspeito de overfit) | ⚠️  Previsão 2026 absurda: R$1,647,414 (curva explodindo)
+  AM Gen               Hummer Wagon 6.5 4x4 Diesel TB        3     1.000       N/A    N/A R$   1,786,607   ⚠️  R² alto com poucos pontos (suspeito de overfit) | ⚠️  Previsão 2026 absurda: R$1,786,607 (curva explodindo)
+  Alfa Romeo           145 QV                                3     0.911       N/A    N/A R$      96,471   ⚠️  Previsão 2026 absurda: R$96,471 (curva explodindo)
+  Alfa Romeo           147 2.0 16V 148cv 4p Semi-Aut.        3     1.000       N/A    N/A R$     148,297   ⚠️  R² alto com poucos pontos (suspeito de overfit)
+  Alfa Romeo           155 Super                             3     0.819       N/A    N/A R$     126,686   ⚠️  Previsão 2026 absurda: R$126,686 (curva explodindo)
+  Acura                NSX 3.0                               5     0.747     0.849 -0.102 R$    -101,516   ⚠️  Previsão 2026 absurda: R$-101,516 (curva explodindo)
+
+  📈 R² médio (treino): 0.822
+  📉 Gap médio (overfitting): 0.113
+  📉 Gap máximo: 1.083
+
+======================================================================
+  BASE: CAMINHÕES  →  base_caminhoes_VIP_mestre.csv
+======================================================================
+
+  📊 Total analisado: 26 modelos | ⚠️  Com alertas: 17
+
+  🚨 MODELOS COM PROBLEMA DETECTADO:
+  Marca                Modelo                                n  R²-train  R²-LOOCV    Gap       Prev2026 Alertas
+  ----------------------------------------------------------------------------------------------------------------------------------
+  AGRALE               13000 Turbo 2p (diesel)               6     0.809     0.217  0.592 R$     -78,034   ⚠️  Gap R²-treino vs LOOCV = 0.59 (overfit detectado) | ⚠️  Previsão 2026 absurda: R$-78,034 (curva explodindo)
+  AGRALE               8500 Turbo CD 3p (diesel)             6     0.811     0.347  0.464 R$     208,333   ⚠️  Gap R²-treino vs LOOCV = 0.46 (overfit detectado)
+  AGRALE               13000 Turbo 3-Eixos 2p (diesel)       5     0.742     0.338  0.404 R$    -133,187   ⚠️  Gap R²-treino vs LOOCV = 0.40 (overfit detectado) | ⚠️  Previsão 2026 absurda: R$-133,187 (curva explodindo)
+  AGRALE               8000 Furgovan 4.3 TDI Mec 4p          8     0.897     0.638  0.259 R$     111,848   ⚠️  Gap R²-treino vs LOOCV = 0.26 (overfit detectado)
+  AGRALE               10000 / 10000 S  2p (diesel) (E5)    11     0.892     0.642  0.250 R$     254,788   ⚠️  Gap R²-treino vs LOOCV = 0.25 (overfit detectado)
+  AGRALE               8500 E-tronic CE 2p (diesel)          7     0.846     0.637  0.209 R$     187,043   ⚠️  Gap R²-treino vs LOOCV = 0.21 (overfit detectado)
+  AGRALE               6000 D CD RS/ RD 3p (diesel)          6     0.824     0.639  0.184 R$     137,052   ⚠️  Gap R²-treino vs LOOCV = 0.18 (overfit detectado) | ⚠️  Previsão 2026 absurda: R$137,052 (curva explodindo)
+  AGRALE               1800 D-RS 2p (diesel)                 7     0.875     0.780  0.095 R$      54,603   ⚠️  Previsão 2026 absurda: R$54,603 (curva explodindo)
+  AGRALE               1800 D-RD 2p (diesel)                 7     0.881     0.797  0.084 R$      98,325   ⚠️  Previsão 2026 absurda: R$98,325 (curva explodindo)
+  AGRALE               4500 D-RD 2p (diesel)                 4     0.988     0.927  0.061 R$      64,938   ⚠️  R² alto com poucos pontos (suspeito de overfit)
+  AGRALE               1600 D-RD 2p (diesel)                10     0.952     0.908  0.044 R$      76,932   ⚠️  Previsão 2026 absurda: R$76,932 (curva explodindo)
+  AGRALE               7500 TDX 2p (diesel)                  9     0.941     0.899  0.042 R$     147,142   ⚠️  Previsão 2026 absurda: R$147,142 (curva explodindo)
+  AGRALE               1600 D-RS 2p (diesel)                10     0.947     0.908  0.039 R$      70,536   ⚠️  Previsão 2026 absurda: R$70,536 (curva explodindo)
+  AGRALE               5000 D-RS 2p (diesel)                 4     0.995     0.979  0.016 R$      70,333   ⚠️  R² alto com poucos pontos (suspeito de overfit) | ⚠️  Previsão 2026 absurda: R$70,333 (curva explodindo)
+  AGRALE               7000 D-RD CD 4p (diesel)              4     0.997     0.992  0.005 R$      53,072   ⚠️  R² alto com poucos pontos (suspeito de overfit)
+  AGRALE               4500 D-RS 2p (diesel)                 4     0.999     0.997  0.002 R$      52,671   ⚠️  R² alto com poucos pontos (suspeito de overfit)
+  AGRALE               5000 D-RD 2p (diesel)                 5     0.732     0.884 -0.152 R$     -42,908   ⚠️  Previsão 2026 absurda: R$-42,908 (curva explodindo)
+
+  📈 R² médio (treino): 0.912
+  📉 Gap médio (overfitting): 0.116
+  📉 Gap máximo: 0.592
+
+======================================================================
+  RESUMO DA ANÁLISE
+======================================================================
+
+  Interpretação dos resultados:
+  ─────────────────────────────
+  ✅ Gap < 0.10  → Modelo generalizando bem (sem overfitting)
+  ⚠️  Gap 0.10~0.25 → Leve overfitting (atenção em amostras pequenas)
+  🚨 Gap > 0.25   → Overfitting severo (curva memoriza os dados)
+  🚨 Previsão negativa/absurda → Extrapolação da curva explodindo
+
+  Causa mais comum: poucos pontos (n < 5) com grau 2.
+  Grau 2 exige no mínimo 3 pontos, mas é confiável com n ≥ 6.
+  

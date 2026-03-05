@@ -1,16 +1,19 @@
 <!-- ── Tab: VIP Reports ── -->
-<div x-show="abaAtiva === 'vip'" class="p-6" x-cloak>
+<div x-show="abaAtiva === 'vip'" class="p-4 md:p-6" x-cloak>
 
     <!-- Non-VIP teaser -->
     <div x-show="!usuarioVip">
         <h2 class="text-xl font-bold mb-1" style="color: rgb(var(--color-content));">🔒 Área Restrita — Membros VIP</h2>
-        <p class="text-sm mb-6" style="color: rgb(var(--color-content-muted));">Descubra os segredos que as concessionárias não
-            querem que você saiba.</p>
+        <p class="text-sm mb-6" style="color: rgb(var(--color-content-muted));">Descubra os segredos que as
+            concessionárias não querem que você saiba.</p>
 
         <div class="panel overflow-hidden mb-6">
-            <div class="px-4 py-3" style="border-bottom: 1px solid rgb(var(--color-border)); background: rgba(var(--color-surface), 0.6);">
-                <p class="text-xs font-semibold uppercase tracking-wider" style="color: rgb(var(--color-content-muted));">Prévia —
-                    Motos que menos desvalorizam no Brasil</p>
+            <div class="px-4 py-3"
+                style="border-bottom: 1px solid rgb(var(--color-border)); background: rgba(var(--color-surface), 0.6);">
+                <p class="text-xs font-semibold uppercase tracking-wider"
+                    style="color: rgb(var(--color-content-muted));">Prévia — <span
+                        x-text="tipoVeiculo === 'MOTORCYCLE' ? 'Motos' : 'Veículos'"></span> que menos desvalorizam no
+                    Brasil</p>
             </div>
             <table class="data-table">
                 <thead>
@@ -19,11 +22,11 @@
                         <th scope="col">Marca</th>
                         <th scope="col">Modelo</th>
                         <th scope="col">Preço</th>
-                        <th scope="col">Perda/Ano</th>
+                        <th scope="col">Impacto Anual</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <template x-for="item in degustacao" :key="item.ranking">
+                    <template x-for="(item, idx) in degustacao" :key="idx">
                         <tr>
                             <td x-text="item.ranking"></td>
                             <td x-text="item.marca"></td>
@@ -38,8 +41,9 @@
 
         <div class="panel p-6">
             <p class="text-sm mb-4" style="color: rgb(var(--color-content-muted));">
-                Ao assinar o VIP por <strong style="color: rgb(var(--color-content));">R$ 9,90</strong>, você desbloqueia o
-                nome real dessas motos e muito mais.
+                Ao assinar o VIP por <strong style="color: rgb(var(--color-content));">R$ 9,90</strong>, você
+                desbloqueia o nome real desses <span
+                    x-text="tipoVeiculo === 'MOTORCYCLE' ? 'motos' : 'veículos'"></span> e muito mais.
             </p>
             <a href="https://www.mercadopago.com.br" target="_blank" rel="noopener"
                 class="btn-cta bg-amber-500 hover:bg-amber-600 text-white">
@@ -50,40 +54,213 @@
 
     <!-- VIP content -->
     <div x-show="usuarioVip" x-cloak>
-        <div class="alert alert-success mb-6">
-            👑 Bem-vindo à Área VIP! Aqui estão os seus relatórios exclusivos.
+
+        <!-- Sections grid -->
+        <div class="space-y-8">
+
+            <!-- Section 1: Top Moedas Fortes -->
+            <section>
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="text-xl">🏆</span>
+                    <div>
+                        <h3 class="font-bold" style="color: rgb(var(--color-content));">Top 10 — Moedas Fortes</h3>
+                        <p class="text-xs" style="color: rgb(var(--color-content-muted));">Menos desvalorização anual ·
+                            Ano ≥ 2024 · Clique para ver o gráfico</p>
+                    </div>
+                </div>
+                <div class="panel overflow-hidden">
+                    <table class="data-table w-full">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width:40px">#</th>
+                                <th scope="col">Marca</th>
+                                <th scope="col">Modelo</th>
+                                <th scope="col">Ano</th>
+                                <th scope="col">Preço</th>
+                                <th scope="col">Impacto Anual</th>
+                                <th scope="col" style="width:36px"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template
+                                x-for="(item, idx) in (vipRelatorios && vipRelatorios.recentes ? vipRelatorios.recentes : [])"
+                                :key="idx">
+                                <tr class="cursor-pointer transition-colors duration-150"
+                                    :class="vipMotoSelecionada && vipMotoSelecionada.marca === item.marca && vipMotoSelecionada.modelo === item.modelo ? 'bg-orange-50 dark:bg-orange-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'"
+                                    @click="selecionarMotoVip(item.marca, item.modelo)">
+                                    <td>
+                                        <span class="font-bold text-xs" style="color: rgb(var(--color-content-muted));"
+                                            x-text="item.pos"></span>
+                                    </td>
+                                    <td class="font-semibold text-xs" x-text="item.marca"></td>
+                                    <td class="font-medium" x-text="item.modelo"></td>
+                                    <td class="text-xs" x-text="item.ano"></td>
+                                    <td class="font-mono text-xs" x-text="item.preco"></td>
+                                    <td>
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold text-white"
+                                            :style="'background-color: ' + item.risco_cor"
+                                            x-text="item.perda_ano"></span>
+                                    </td>
+                                    <td class="text-center text-slate-400">
+                                        <span
+                                            x-show="!(vipMotoSelecionada && vipMotoSelecionada.marca === item.marca && vipMotoSelecionada.modelo === item.modelo)">📈</span>
+                                        <span
+                                            x-show="vipMotoSelecionada && vipMotoSelecionada.marca === item.marca && vipMotoSelecionada.modelo === item.modelo">✅</span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Section 2: Guerreiras Baratas -->
+            <section>
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="text-xl">💸</span>
+                    <div>
+                        <h3 class="font-bold" style="color: rgb(var(--color-content));">Guerreiras Baratas</h3>
+                        <p class="text-xs" style="color: rgb(var(--color-content-muted));">Até <span
+                                x-text="tipoVeiculo === 'MOTORCYCLE' ? 'R$ 15.000' : 'R$ 50.000'"></span> · Ano ≥ 2018 ·
+                            Melhor custo-benefício de revenda · Clique para ver o gráfico</p>
+                    </div>
+                </div>
+                <div class="panel overflow-hidden">
+                    <table class="data-table w-full">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width:40px">#</th>
+                                <th scope="col">Marca</th>
+                                <th scope="col">Modelo</th>
+                                <th scope="col">Preço</th>
+                                <th scope="col">Impacto Anual</th>
+                                <th scope="col" style="width:36px"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template
+                                x-for="(item, idx) in (vipRelatorios && vipRelatorios.baratas ? vipRelatorios.baratas : [])"
+                                :key="idx">
+                                <tr class="cursor-pointer transition-colors duration-150"
+                                    :class="vipMotoSelecionada && vipMotoSelecionada.marca === item.marca && vipMotoSelecionada.modelo === item.modelo ? 'bg-orange-50 dark:bg-orange-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'"
+                                    @click="selecionarMotoVip(item.marca, item.modelo)">
+                                    <td><span class="font-bold text-xs" style="color: rgb(var(--color-content-muted));"
+                                            x-text="item.pos"></span></td>
+                                    <td class="font-semibold text-xs" x-text="item.marca"></td>
+                                    <td class="font-medium" x-text="item.modelo"></td>
+                                    <td class="font-mono text-xs" x-text="item.preco"></td>
+                                    <td>
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold text-white"
+                                            :style="'background-color: ' + item.risco_cor"
+                                            x-text="item.perda_ano"></span>
+                                    </td>
+                                    <td class="text-center text-slate-400">
+                                        <span
+                                            x-show="!(vipMotoSelecionada && vipMotoSelecionada.marca === item.marca && vipMotoSelecionada.modelo === item.modelo)">📈</span>
+                                        <span
+                                            x-show="vipMotoSelecionada && vipMotoSelecionada.marca === item.marca && vipMotoSelecionada.modelo === item.modelo">✅</span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Section 3: Muro da Vergonha -->
+            <section>
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="text-xl">🚨</span>
+                    <div>
+                        <h3 class="font-bold text-red-600 dark:text-red-400">Muro da Vergonha — As Bombas de Revenda
+                        </h3>
+                        <p class="text-xs" style="color: rgb(var(--color-content-muted));">Maior queda de valor anual ·
+                            Evite se o foco for revenda · Clique para ver o gráfico</p>
+                    </div>
+                </div>
+                <div class="panel overflow-hidden" style="border: 1px solid rgba(239,68,68,0.3);">
+                    <table class="data-table w-full">
+                        <thead>
+                            <tr>
+                                <th scope="col" style="width:40px">#</th>
+                                <th scope="col">Marca</th>
+                                <th scope="col">Modelo</th>
+                                <th scope="col">Ano</th>
+                                <th scope="col">Preço</th>
+                                <th scope="col">Impacto Anual</th>
+                                <th scope="col" style="width:36px"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template
+                                x-for="(item, idx) in (vipRelatorios && vipRelatorios.bombas ? vipRelatorios.bombas : [])"
+                                :key="idx">
+                                <tr class="cursor-pointer transition-colors duration-150"
+                                    :class="vipMotoSelecionada && vipMotoSelecionada.marca === item.marca && vipMotoSelecionada.modelo === item.modelo ? 'bg-red-50 dark:bg-red-900/20' : 'hover:bg-red-50/50 dark:hover:bg-red-900/10'"
+                                    @click="selecionarMotoVip(item.marca, item.modelo)">
+                                    <td><span class="font-bold text-xs" style="color: rgb(var(--color-content-muted));"
+                                            x-text="item.pos"></span></td>
+                                    <td class="font-semibold text-xs" x-text="item.marca"></td>
+                                    <td class="font-medium" x-text="item.modelo"></td>
+                                    <td class="text-xs" x-text="item.ano"></td>
+                                    <td class="font-mono text-xs" x-text="item.preco"></td>
+                                    <td>
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold text-white bg-red-600"
+                                            x-text="item.perda_ano"></span>
+                                    </td>
+                                    <td class="text-center text-slate-400">
+                                        <span
+                                            x-show="!(vipMotoSelecionada && vipMotoSelecionada.marca === item.marca && vipMotoSelecionada.modelo === item.modelo)">📈</span>
+                                        <span
+                                            x-show="vipMotoSelecionada && vipMotoSelecionada.marca === item.marca && vipMotoSelecionada.modelo === item.modelo">✅</span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div><!-- /space-y-8 -->
+
+        <!-- Chart panel (shown when row is clicked) - aparece ABAIXO das tabelas -->
+        <div id="vip-grafico-panel" x-show="vipMotoSelecionada" x-cloak class="panel mt-6 overflow-hidden"
+            style="border-left: 4px solid rgb(249,115,22);"
+            x-init="$watch('vipMotoSelecionada', val => { if (val) $nextTick(() => document.getElementById('vip-grafico-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })) })">
+            <div class="flex items-center justify-between px-5 py-3"
+                style="border-bottom: 1px solid rgb(var(--color-border)); background: rgba(var(--color-surface),0.7);">
+                <div>
+                    <h3 class="font-bold text-sm" style="color: rgb(var(--color-content));"
+                        x-text="vipMotoSelecionada ? '📊 ' + vipMotoSelecionada.marca + ' ' + vipMotoSelecionada.modelo : ''">
+                    </h3>
+                    <p class="text-xs" style="color: rgb(var(--color-content-muted));">Histórico de desvalorização FIPE
+                    </p>
+                </div>
+                <button @click="vipMotoSelecionada = null; vipGraficoData = null" class="text-xs px-2 py-1 rounded"
+                    style="color: rgb(var(--color-content-muted)); background: rgba(var(--color-border),0.5);">
+                    ✕ Fechar
+                </button>
+            </div>
+            <div class="p-4">
+                <!-- Loading -->
+                <div x-show="vipGraficoLoading" class="flex items-center justify-center py-10 gap-3"
+                    style="color: rgb(var(--color-content-muted));">
+                    <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z">
+                        </path>
+                    </svg>
+                    <span class="text-sm">Carregando análise...</span>
+                </div>
+                <!-- Chart container -->
+                <div id="grafico-vip-detalhe" style="height: 300px;" x-show="!vipGraficoLoading"></div>
+            </div>
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
-            <div>
-                <h3 class="text-xs font-bold uppercase tracking-wider mb-3" style="color: rgb(var(--color-content-muted));">
-                    🏆 Top 10 — Moedas Fortes (≥ 2024)
-                </h3>
-                <div class="panel overflow-hidden">
-                    <div id="tabela-recentes"></div>
-                </div>
-            </div>
-            <div>
-                <h3 class="text-xs font-bold uppercase tracking-wider mb-1" style="color: rgb(var(--color-content-muted));">
-                    💸 Guerreiras Baratas (até R$ 15k, ≥ 2018)
-                </h3>
-                <p class="text-xs mb-3" style="color: rgb(var(--color-content-muted));">Melhores custo-benefício de revenda</p>
-                <div class="panel overflow-hidden">
-                    <div id="tabela-baratas"></div>
-                </div>
-            </div>
-        </div>
-
-        <div>
-            <h3 class="text-xs font-bold uppercase tracking-wider mb-1 text-red-500 dark:text-red-400">
-                🚨 Muro da Vergonha — As Bombas de Revenda
-            </h3>
-            <p class="text-xs mb-3" style="color: rgb(var(--color-content-muted));">Maior queda de valor anual — evite se o foco for
-                revenda</p>
-            <div class="panel overflow-hidden">
-                <div id="tabela-bombas"></div>
-            </div>
-        </div>
-    </div>
+    </div><!-- /VIP content -->
 
 </div>

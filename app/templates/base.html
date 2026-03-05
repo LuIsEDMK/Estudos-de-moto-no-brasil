@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="{% block description %}MotoExpert AI — Análise de desvalorização FIPE para motos no Brasil.{% endblock %}">
+    <title>{% block title %}MotoExpert AI | Consultoria{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        /* FOUC prevention - must run before any rendering */
+        (function () {
+            const stored = localStorage.theme;
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (stored === 'dark' || (!stored && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        /* Semantic color tokens that auto-switch with dark mode */
+                        surface: {
+                            DEFAULT: 'rgb(var(--color-surface) / <alpha-value>)',
+                            elevated: 'rgb(var(--color-surface-elevated) / <alpha-value>)',
+                        },
+                        content: {
+                            DEFAULT: 'rgb(var(--color-content) / <alpha-value>)',
+                            muted: 'rgb(var(--color-content-muted) / <alpha-value>)',
+                        },
+                        border: {
+                            DEFAULT: 'rgb(var(--color-border) / <alpha-value>)',
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Modular CSS -->
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/forms.css">
+    <link rel="stylesheet" href="/static/css/buttons.css">
+    <link rel="stylesheet" href="/static/css/cards.css">
+    <link rel="stylesheet" href="/static/css/tables.css">
+    <link rel="stylesheet" href="/static/css/alerts.css">
+    <link rel="stylesheet" href="/static/css/tabs.css">
+    <link rel="stylesheet" href="/static/css/badges.css">
+    <link rel="stylesheet" href="/static/css/theme-toggle.css">
+    {% block extra_head %}{% endblock %}
+</head>
+
+    <body class="min-h-screen font-sans antialiased transition-colors duration-200"
+        {% block body_attrs %}{% endblock %}>
+
+        <!-- ── Header ── -->
+        <header class="sticky top-0 z-30 border-b backdrop-blur-sm transition-colors duration-200"
+            style="background: rgba(var(--color-surface), 0.9); border-color: rgb(var(--color-border));">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3 min-w-0">
+                    <span class="text-2xl" aria-hidden="true">🏍️</span>
+                    <div class="min-w-0">
+                        <span class="text-lg font-bold leading-none" style="color: rgb(var(--color-content));">MotoExpert AI</span>
+                        <p class="text-xs hidden sm:block" style="color: rgb(var(--color-content-muted));">Análise de desvalorização FIPE</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    {% block header_extras %}{% endblock %}
+                    <button id="theme-toggle" aria-label="Toggle theme"></button>
+                </div>
+            </div>
+        </header>
+
+        <!-- ── Page Content ── -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+            {% block content %}{% endblock %}
+        </div>
+
+        <!-- ── Theme Toggle Script ── -->
+        <script>
+            (function () {
+                const btn = document.getElementById('theme-toggle');
+                const sun = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+                const moon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+                
+                function syncIcon() {
+                    if (btn) btn.innerHTML = document.documentElement.classList.contains('dark') ? sun : moon;
+                }
+                
+                syncIcon();
+                
+                if (btn) {
+                    btn.addEventListener('click', () => {
+                        const isDark = document.documentElement.classList.toggle('dark');
+                        localStorage.theme = isDark ? 'dark' : 'light';
+                        syncIcon();
+                    });
+                }
+            })();
+        </script>
+
+        {% block extra_scripts %}{% endblock %}
+    </body>
+
+</html>
