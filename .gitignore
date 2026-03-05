@@ -1,3 +1,40 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Output
+.output
+.vercel
+.netlify
+/.svelte-kit
+/build
+
+# Cloudflare Wrangler
+.wrangler/
+python_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+.env.local
+.env.*.local
+.dev.vars
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Cloudflare Types
+/worker-configuration.d.ts
+
 # Python standard
 __pycache__/
 *.py[cod]
@@ -35,32 +72,13 @@ venv/
 ENV/
 .venv-workers/
 
-# Environments (sensitive data)
-.env
-.env.local
-.env.*.local
-.dev.vars
-
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Cloudflare Wrangler
-.wrangler/
-python_modules/
-.dev.vars
-
 # IDEs
 .idea/
 .vscode/
 *.swp
 *.swo
-.DS_Store
 
 # Data files (Optional - comment out if you want to keep them in Git)
 # We keep data_bundle.py versioned as it's our new source of truth
 *.csv
 *.png
-
